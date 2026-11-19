@@ -1,0 +1,54 @@
+name: pr-format
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+jobs:
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check branch, title and commits
+        env:
+          BRANCH: ${{ github.head_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          fail=0
+
+          check_msg() {
+            local m="$1"
+            local re='^\[(feat|enhance|fix|docs|style|refactor|perf|test|build|ci|chore|revert)\] ST-[0-9]+: [A-Z].*[^.]$'
+            if ! [[ "$m" =~ $re ]]; then
+              echo "Bad format: $m"
+              return 1
+            fi
+            if [ ${#m} -gt 72 ]; then
+              echo "Longer than 72 characters: $m"
+              return 1
+            fi
+            local desc="${m#*: }"
+            local upper letters
+            upper=$(printf '%s' "$desc" | tr -cd 'A-Z' | wc -c)
+            letters=$(printf '%s' "$desc" | tr -cd 'A-Za-z' | wc -c)
+            if [ "$letters" -gt 0 ] && [ $((upper * 100 / letters)) -gt 30 ]; then
+              echo "Too many capital letters: $m"
+              return 1
+            fi
+          }
+
+          if ! [[ "$BRANCH" =~ ^ST-[0-9]+-[a-z0-9]+(-[a-z0-9]+)*$ ]]; then
+            echo "Branch must look like ST-123-short-description: $BRANCH"
+            fail=1
+          fi
+
+          check_msg "$TITLE" || fail=1
+
+          while IFS= read -r line; do
+            check_msg "$line" || fail=1
+          done < <(git log --no-merges --format=%s "$BASE_SHA..$HEAD_SHA")
+
+          exit $fail
+          
