@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest a change or addition
+labels: [enhancement]
+body:
+  - type: input
+    id: jira
+    attributes:
+      label: Jira key
+      placeholder: ST-XXX
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is this needed
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What should change
+    validations:
+      required: true
