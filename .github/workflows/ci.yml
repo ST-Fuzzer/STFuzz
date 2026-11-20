@@ -55,25 +55,35 @@ jobs:
           if-no-files-found: error
 
   tidy:
-    name: Tidy
-    needs: build
-    runs-on: windows-latest
+      name: Tidy
+      needs: build
+      runs-on: windows-latest
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
 
-      - name: Download build directory
-        uses: actions/download-artifact@v4
-        with:
-          name: build-dir
-          path: build/
+        - name: Download build directory
+          uses: actions/download-artifact@v4
+          with:
+            name: build-dir
+            path: build/
 
-      - name: Install LLVM
-        run: ./scripts/github/windows/install-llvm.ps1
+        - name: Install Qt6 (MinGW)
+          uses: jurplel/install-qt-action@v4
+          with:
+            version: '6.8.*'
+            host: 'windows'
+            target: 'desktop'
+            arch: 'win64_mingw'
+            install-deps: 'true'
+            cache: 'true'
 
-      - name: Run clang-tidy
-        run: ./scripts/github/windows/tidy.ps1
+        - name: Install LLVM
+          run: ./scripts/github/windows/install-llvm.ps1
+
+        - name: Run clang-tidy
+          run: ./scripts/github/windows/tidy.ps1
 
   smoke:
     name: Smoke
