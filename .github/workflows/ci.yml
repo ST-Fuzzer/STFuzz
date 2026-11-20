@@ -7,13 +7,33 @@ on:
     branches: [main, develop]
 
 jobs:
-  windows-ci:
-    name: Windows CI Pipeline
+  format:
+    name: Format
     runs-on: windows-latest
+    shell: pwsh
 
-    defaults:
-      run:
-        shell: pwsh
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install LLVM (clang-format)
+        run: |
+          choco install llvm -y
+          echo "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
+
+      - name: Check clang-format
+        run: |
+          Get-ChildItem -Path dev, tests -Recurse -Include *.cpp, *.hpp |
+            ForEach-Object {
+              clang-format --dry-run --Werror $_.FullName
+              if ($LASTEXITCODE -ne 0) { exit 1 }
+            }
+
+  build:
+    name: Build
+    needs: format
+    runs-on: windows-latest
+    shell: pwsh
 
     steps:
       - name: Checkout repository
@@ -23,46 +43,113 @@ jobs:
         uses: jurplel/install-qt-action@v4
         with:
           version: '6.8.*'
-          host: windows
-          target: desktop
-          arch: win64_mingw
-          tools: 'tools_mingw1310'
-          install-deps: true
-          cache: true
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'
+          install-deps: 'true'
+          cache: 'true'
 
-      - name: Install LLVM and Ninja
+      - name: Configure & Build
         run: |
-          choco install llvm ninja -y
-          echo "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
+          cmake -S . -B build -G Ninja `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          cmake --build build -j $env:NUMBER_OF_PROCESSORS
+          if ($LASTEXITCODE -ne 0) { exit 1 }
 
-      - name: 1. Format
-        run: ./scripts/github/windows/format.ps1
-
-      - name: 2. Build
-        run: ./scripts/github/windows/build.ps1
-
-      - name: 3. Static Analysis
-        run: ./scripts/github/windows/tidy.ps1
-
-      - name: 4. Smoke Tests
-        run: ./scripts/github/windows/smoke-tests.ps1
-
-      - name: 5. Unit Tests
-        run: ./scripts/github/windows/unit-tests.ps1
-
-      - name: 6. Integration Tests
-        run: ./scripts/github/windows/integration-tests.ps1
-
-      - name: 7. Qt Deployment
-        run: ./scripts/github/windows/deploy-temp.ps1
-
-      - name: 8. Package Application
-        run: ./scripts/github/windows/package.ps1
-
-      - name: 9. Upload Artifact
+      - name: Upload build directory
         uses: actions/upload-artifact@v4
         with:
-          name: STFuzz-Windows
-          path: Windows-Application.zip
+          name: build-dir
+          path: build/
           if-no-files-found: error
-          retention-days: 14
+
+  tidy:
+    name: Tidy
+    needs: build
+    runs-on: windows-latest
+    shell: pwsh
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build directory
+        uses: actions/download-artifact@v4
+        with:
+          name: build-dir
+          path: build/
+
+      - name: Install LLVM (clang-tidy)
+        run: |
+          choco install llvm -y
+          echo "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
+
+      - name: Run clang-tidy
+        run: |
+          $allCpp = Get-ChildItem -Path dev, tests -Recurse -Filter *.cpp | ForEach-Object { $_.FullName }
+          python (Get-Command run-clang-tidy).Source -p build -j $env:NUMBER_OF_PROCESSORS $allCpp
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+  smoke:
+    name: Smoke
+    needs: tidy
+    runs-on: windows-latest
+    shell: pwsh
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build directory
+        uses: actions/download-artifact@v4
+        with:
+          name: build-dir
+          path: build/
+
+      - name: Install Qt6 (MinGW)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'
+          install-deps: 'true'
+          cache: 'true'
+
+      - name: Run smoke tests
+        run: |
+          ctest --test-dir build -R smoke --output-on-failure
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+  unit:
+    name: Unit
+    needs: smoke
+    runs-on: windows-latest
+    shell: pwsh
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build directory
+        uses: actions/download-artifact@v4
+        with:
+          name: build-dir
+          path: build/
+
+      - name: Install Qt6 (MinGW)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'
+          install-deps: 'true'
+          cache: 'true'
+
+      - name: Run unit tests
+        run: |
+          ctest --test-dir build -R unit --output-on-failure
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          
