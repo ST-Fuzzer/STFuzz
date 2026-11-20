@@ -1,3 +1,3 @@
 #include <gtest/gtest.h>
 
-TEST(Placeholder_unit, Runs) { SUCCEED(); }
+TEST(PlaceholderUnit, Runs) { SUCCEED(); }
