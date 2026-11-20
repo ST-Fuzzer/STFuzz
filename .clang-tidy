@@ -1,0 +1,49 @@
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  clang-analyzer-core.*,
+  clang-analyzer-cplusplus.*,
+  google-*,
+  misc-include-cleaner,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  performance-*,
+  readability-*,
+  -readability-magic-numbers,
+  -readability-identifier-length
+
+WarningsAsErrors: '*'
+FormatStyle: file
+HeaderFileExtensions: ['hpp', 'h']
+ImplementationFileExtensions: ['cpp']
+HeaderFilterRegex: '.*/(dev|tests)/.*'
+RemovedArgs: ['-mno-direct-extern-access']
+
+CheckOptions:
+  readability-identifier-naming.NamespaceCase: lower_case
+  readability-identifier-naming.ClassCase: CamelCase
+  readability-identifier-naming.StructCase: CamelCase
+  readability-identifier-naming.EnumCase: CamelCase
+  readability-identifier-naming.TypeAliasCase: CamelCase
+  readability-identifier-naming.TypedefCase: CamelCase
+  readability-identifier-naming.TemplateParameterCase: CamelCase
+  readability-identifier-naming.FunctionCase: CamelCase
+  readability-identifier-naming.MethodCase: CamelCase
+  readability-identifier-naming.VariableCase: lower_case
+  readability-identifier-naming.ParameterCase: lower_case
+  readability-identifier-naming.PrivateMemberCase: lower_case
+  readability-identifier-naming.PrivateMemberSuffix: _
+  readability-identifier-naming.ProtectedMemberCase: lower_case
+  readability-identifier-naming.ProtectedMemberSuffix: _
+  readability-identifier-naming.PublicMemberCase: lower_case
+  readability-identifier-naming.ConstexprVariableCase: CamelCase
+  readability-identifier-naming.ConstexprVariablePrefix: k
+  readability-identifier-naming.GlobalConstantCase: CamelCase
+  readability-identifier-naming.GlobalConstantPrefix: k
+  readability-identifier-naming.StaticConstantCase: CamelCase
+  readability-identifier-naming.StaticConstantPrefix: k
+  readability-identifier-naming.EnumConstantCase: CamelCase
+  readability-identifier-naming.EnumConstantPrefix: k
+  readability-identifier-naming.MacroDefinitionCase: UPPER_CASE
+  readability-identifier-naming.IgnoreMainLikeFunctions: 1
