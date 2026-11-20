@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  format:
+    name: Format
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install LLVM
+        run: ./scripts/github/windows/install-llvm.ps1
+
+      - name: Check format
+        run: ./scripts/github/windows/format.ps1
+
+  build:
+    name: Build
+    needs: format
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Qt6 (MinGW)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'
+          install-deps: 'true'
+          cache: 'true'
+
+      - name: Build project
+        run: ./scripts/github/windows/build.ps1
+
+      - name: Upload build directory
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-dir
+          path: build/
+          if-no-files-found: error
+
+  tidy:
+      name: Tidy
+      needs: build
+      runs-on: windows-latest
+
+      steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Download build directory
+          uses: actions/download-artifact@v4
+          with:
+            name: build-dir
+            path: build/
+
+        - name: Install Qt6 (MinGW)
+          uses: jurplel/install-qt-action@v4
+          with:
+            version: '6.8.*'
+            host: 'windows'
+            target: 'desktop'
+            arch: 'win64_mingw'
+            install-deps: 'true'
+            cache: 'true'
+
+        - name: Install LLVM
+          run: ./scripts/github/windows/install-llvm.ps1
+
+        - name: Run clang-tidy
+          run: ./scripts/github/windows/tidy.ps1
+
+  smoke:
+    name: Smoke
+    needs: tidy
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build directory
+        uses: actions/download-artifact@v4
+        with:
+          name: build-dir
+          path: build/
+
+      - name: Install Qt6 (MinGW)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'
+          install-deps: 'true'
+          cache: 'true'
+
+      - name: Run smoke tests
+        run: ./scripts/github/windows/smoke-tests.ps1
+
+  unit:
+    name: Unit
+    needs: smoke
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build directory
+        uses: actions/download-artifact@v4
+        with:
+          name: build-dir
+          path: build/
+
+      - name: Install Qt6 (MinGW)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'
+          install-deps: 'true'
+          cache: 'true'
+
+      - name: Run unit tests
+        run: ./scripts/github/windows/unit-tests.ps1
+
+  int:
+    name: Integration
+    needs: unit
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build directory
+        uses: actions/download-artifact@v4
+        with:
+          name: build-dir
+          path: build/
+
+      - name: Install Qt6 (MinGW)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          host: 'windows'
+          target: 'desktop'
+          arch: 'win64_mingw'
+          install-deps: 'true'
+          cache: 'true'
+
+      - name: Run integration tests
+        run: ./scripts/github/windows/integration-tests.ps1
