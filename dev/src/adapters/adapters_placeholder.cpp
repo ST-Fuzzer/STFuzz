@@ -1,5 +1,5 @@
 #include "adapters/adapters_placeholder.hpp"
 
 namespace stfuzz::adapters {
-void placeholder() {}
+void Placeholder() {}
 }  // namespace stfuzz::adapters

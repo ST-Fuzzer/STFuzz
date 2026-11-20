@@ -1,5 +1,5 @@
 #include "utils/utils_placeholder.hpp"
 
 namespace stfuzz::utils {
-void placeholder() {}
+void Placeholder() {}
 }  // namespace stfuzz::utils

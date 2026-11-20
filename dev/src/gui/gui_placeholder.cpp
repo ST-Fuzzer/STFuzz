@@ -1,5 +1,5 @@
 #include "gui/gui_placeholder.hpp"
 
 namespace stfuzz::gui {
-void placeholder() {}
+void Placeholder() {}
 }  // namespace stfuzz::gui
