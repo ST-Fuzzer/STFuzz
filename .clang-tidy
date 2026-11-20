@@ -19,7 +19,6 @@ FormatStyle: file
 HeaderFileExtensions: ['hpp', 'h']
 ImplementationFileExtensions: ['cpp']
 HeaderFilterRegex: '.*/(dev|tests)/.*'
-RemovedArgs: ['-mno-direct-extern-access']
 
 CheckOptions:
   - key: misc-include-cleaner.IgnoreHeaders
