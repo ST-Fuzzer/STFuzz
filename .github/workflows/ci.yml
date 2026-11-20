@@ -19,18 +19,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install LLVM (clang-format)
-        run: |
-          choco install llvm -y
-          echo "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
+      - name: Install LLVM
+        run: ./scripts/github/windows/install-llvm.ps1
 
-      - name: Check clang-format
-        run: |
-          Get-ChildItem -Path dev, tests -Recurse -Include *.cpp, *.hpp |
-            ForEach-Object {
-              clang-format --dry-run --Werror $_.FullName
-              if ($LASTEXITCODE -ne 0) { exit 1 }
-            }
+      - name: Check format
+        run: ./scripts/github/windows/format.ps1
 
   build:
     name: Build
@@ -51,13 +44,8 @@ jobs:
           install-deps: 'true'
           cache: 'true'
 
-      - name: Configure & Build
-        run: |
-          cmake -S . -B build -G Ninja `
-            -DCMAKE_BUILD_TYPE=Release `
-            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-          cmake --build build -j $env:NUMBER_OF_PROCESSORS
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Build project
+        run: ./scripts/github/windows/build.ps1
 
       - name: Upload build directory
         uses: actions/upload-artifact@v4
@@ -81,16 +69,11 @@ jobs:
           name: build-dir
           path: build/
 
-      - name: Install LLVM (clang-tidy)
-        run: |
-          choco install llvm -y
-          echo "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
+      - name: Install LLVM
+        run: ./scripts/github/windows/install-llvm.ps1
 
       - name: Run clang-tidy
-        run: |
-          $allCpp = Get-ChildItem -Path dev, tests -Recurse -Filter *.cpp | ForEach-Object { $_.FullName }
-          python (Get-Command run-clang-tidy).Source -p build -j $env:NUMBER_OF_PROCESSORS $allCpp
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+        run: ./scripts/github/windows/tidy.ps1
 
   smoke:
     name: Smoke
@@ -117,10 +100,8 @@ jobs:
           install-deps: 'true'
           cache: 'true'
 
-      - name: Run smoke tests (GTest)
-        run: |
-          .\build\tests\smoke\smoke_test.exe
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Run smoke tests
+        run: ./scripts/github/windows/smoke-tests.ps1
 
   unit:
     name: Unit
@@ -147,10 +128,8 @@ jobs:
           install-deps: 'true'
           cache: 'true'
 
-      - name: Run unit tests (GTest)
-        run: |
-          .\build\tests\unit\unit_test.exe
-          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Run unit tests
+        run: ./scripts/github/windows/unit-tests.ps1
 
   int:
     name: Integration
@@ -177,8 +156,5 @@ jobs:
           install-deps: 'true'
           cache: 'true'
 
-      - name: Run integration tests (GTest)
-        run: |
-          .\build\tests\int\int_test.exe
-          if ($LASTEXITCODE -ne 0) { exit 1 }
-          
+      - name: Run integration tests
+        run: ./scripts/github/windows/integration-tests.ps1

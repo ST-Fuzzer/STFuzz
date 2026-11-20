@@ -18,3 +18,5 @@ $files | ForEach-Object -Parallel {
         --extra-arg=-U_MSC_VER $_
     if ($LASTEXITCODE -ne 0) { throw "Failed: $_" }
 } -ThrottleLimit ([Environment]::ProcessorCount)
+
+Write-Host "Static analysis passed."
