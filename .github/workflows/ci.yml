@@ -54,7 +54,7 @@ jobs:
         run: ./scripts/github/windows/integration-tests.ps1
 
       - name: 7. Qt Deployment
-        run: ./scripts/github/windows/deploy.ps1
+        run: ./scripts/github/windows/deploy-temp.ps1
 
       - name: 8. Package Application
         run: ./scripts/github/windows/package.ps1
