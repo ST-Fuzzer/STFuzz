@@ -1,0 +1,68 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  windows-ci:
+    name: Windows CI Pipeline
+    runs-on: windows-latest
+
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Qt6 (MinGW)
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.*'
+          host: windows
+          target: desktop
+          arch: win64_mingw
+          tools: 'tools_mingw1310'
+          install-deps: true
+          cache: true
+
+      - name: Install LLVM and Ninja
+        run: |
+          choco install llvm ninja -y
+          echo "C:\Program Files\LLVM\bin" >> $env:GITHUB_PATH
+
+      - name: 1. Format
+        run: ./scripts/github/windows/format.ps1
+
+      - name: 2. Build
+        run: ./scripts/github/windows/build.ps1
+
+      - name: 3. Static Analysis
+        run: ./scripts/github/windows/tidy.ps1
+
+      - name: 4. Smoke Tests
+        run: ./scripts/github/windows/smoke-tests.ps1
+
+      - name: 5. Unit Tests
+        run: ./scripts/github/windows/unit-tests.ps1
+
+      - name: 6. Integration Tests
+        run: ./scripts/github/windows/integration-tests.ps1
+
+      - name: 7. Qt Deployment
+        run: ./scripts/github/windows/deploy.ps1
+
+      - name: 8. Package Application
+        run: ./scripts/github/windows/package.ps1
+
+      - name: 9. Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: STFuzz-Windows
+          path: Windows-Application.zip
+          if-no-files-found: error
+          retention-days: 14
