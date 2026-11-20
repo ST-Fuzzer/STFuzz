@@ -18,7 +18,6 @@ FormatStyle: file
 HeaderFileExtensions: ['hpp', 'h']
 ImplementationFileExtensions: ['cpp']
 HeaderFilterRegex: '.*/(dev|tests)/.*'
-RemovedArgs: ['-mno-direct-extern-access']
 
 CheckOptions:
   readability-identifier-naming.NamespaceCase: lower_case
