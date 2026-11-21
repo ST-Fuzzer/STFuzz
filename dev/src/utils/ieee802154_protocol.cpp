@@ -197,12 +197,18 @@ void WriteSecurityHeader(const void* frame, std::vector<uint8_t>& out) {
 
   auto sec_ctrl = static_cast<uint8_t>(
       level | ((key_id_mode << kAuxKeyIdModeShift) & kAuxKeyIdModeMask));
-  if (f.frame_counter_suppression) sec_ctrl |= kAuxFrameCounterSuppressionMask;
-  if (f.asn_in_nonce) sec_ctrl |= kAuxAsnInNonceMask;
+  if (f.frame_counter_suppression) {
+    sec_ctrl |= kAuxFrameCounterSuppressionMask;
+  }
+  if (f.asn_in_nonce) {
+    sec_ctrl |= kAuxAsnInNonceMask;
+  }
   // Bit 7 (kAuxCtrlReservedMask) is reserved and always written as 0.
 
   WriteU8(sec_ctrl, out);
-  if (!f.frame_counter_suppression) WriteU32Le(f.frame_counter, out);
+  if (!f.frame_counter_suppression) {
+    WriteU32Le(f.frame_counter, out);
+  }
 
   switch (static_cast<Ieee802154KeyIdMode>(key_id_mode)) {
     case Ieee802154KeyIdMode::kImplicit:
