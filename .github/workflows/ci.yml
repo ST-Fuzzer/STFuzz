@@ -41,6 +41,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_mingw'
+          modules: qtserialport
           install-deps: 'true'
           cache: 'true'
 
@@ -76,6 +77,7 @@ jobs:
             host: 'windows'
             target: 'desktop'
             arch: 'win64_mingw'
+            modules: qtserialport
             install-deps: 'true'
             cache: 'true'
 
@@ -107,6 +109,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_mingw'
+          modules: qtserialport
           install-deps: 'true'
           cache: 'true'
 
@@ -135,6 +138,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_mingw'
+          modules: qtserialport
           install-deps: 'true'
           cache: 'true'
 
@@ -163,6 +167,7 @@ jobs:
           host: 'windows'
           target: 'desktop'
           arch: 'win64_mingw'
+          modules: qtserialport
           install-deps: 'true'
           cache: 'true'
 
