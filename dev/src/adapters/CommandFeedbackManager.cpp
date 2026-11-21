@@ -1,6 +1,10 @@
 #include "adapters/CommandFeedbackManager.hpp"
 
 #include <QDateTime>
+#include <QObject>
+#include <QTimer>
+
+#include "adapters/STFuzzTypes.hpp"
 
 namespace stfuzz::adapters {
 
@@ -8,7 +12,7 @@ CommandFeedbackManager::CommandFeedbackManager(QObject* parent)
     : QObject(parent) {}
 
 void CommandFeedbackManager::cancelAllPendingCommands() {
-  for (auto timer : timeoutTimers) {
+  for (auto* timer : timeoutTimers) {
     timer->stop();
     timer->deleteLater();
   }
