@@ -1,8 +1,14 @@
 #include "adapters/CommandFeedbackManager.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
+#include <QByteArray>
 #include <QDateTime>
+#include <QHash>
 #include <QObject>
+#include <QString>
 #include <QTimer>
+#include <QtGlobal>
 
 #include "adapters/STFuzzTypes.hpp"
 
@@ -27,7 +33,7 @@ void CommandFeedbackManager::contextCreated(const CommandContext& context) {
   timer->setSingleShot(true);
 
   connect(timer, &QTimer::timeout, this,
-          [this, id = context.requestId]() { onCommandTimeout(id); });
+          [this, id = context.requestId] { onCommandTimeout(id); });
 
   timeoutTimers.insert(context.requestId, timer);
   timer->start(context.timeoutMs);
@@ -36,10 +42,13 @@ void CommandFeedbackManager::contextCreated(const CommandContext& context) {
 void CommandFeedbackManager::onTransmissionResult(
     const TransmissionResult& result) {
   if (result.status == CommandStatus::TransportError) {
-    completeCommand(
-        result.requestId,
-        CommandResult{result.requestId, 0, CommandStatus::TransportError,
-                      QByteArray(), result.errorDescription});
+    completeCommand(result.requestId, CommandResult{
+                                          result.requestId,
+                                          0,
+                                          CommandStatus::TransportError,
+                                          QByteArray(),
+                                          result.errorDescription,
+                                      });
   }
 }
 
@@ -47,9 +56,13 @@ void CommandFeedbackManager::onCommandResponse(
     const CommandResponse& response) {
   const RequestId id = matchResponse(response);
   if (id != 0) {
-    completeCommand(
-        id, CommandResult{id, response.responseType, CommandStatus::Success,
-                          response.payload, QString()});
+    completeCommand(id, CommandResult{
+                            id,
+                            response.responseType,
+                            CommandStatus::Success,
+                            response.payload,
+                            QString(),
+                        });
   }
 }
 
@@ -71,7 +84,7 @@ void CommandFeedbackManager::onCommandTimeout(RequestId id) {
   event.timeoutMs = ctx.timeoutMs;
   event.occurredAt = QDateTime::currentDateTimeUtc();
 
-  emit commandTimeoutDetected(event);
+  Q_EMIT commandTimeoutDetected(event);
 }
 
 RequestId CommandFeedbackManager::matchResponse(
@@ -90,7 +103,7 @@ void CommandFeedbackManager::completeCommand(RequestId id,
     timer->stop();
     timer->deleteLater();
   }
-  emit commandResultReady(result);
+  Q_EMIT commandResultReady(result);
 }
 
 }  // namespace stfuzz::adapters

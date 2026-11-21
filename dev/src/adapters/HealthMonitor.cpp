@@ -1,5 +1,7 @@
 #include "adapters/HealthMonitor.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QDateTime>
 #include <QObject>
 #include <QString>
@@ -62,7 +64,7 @@ void HealthMonitor::updateHealthState(DUTHealthState state) {
     ev.healthState = currentState;
     ev.timestamp = QDateTime::currentDateTimeUtc();
     ev.description = QStringLiteral("DUT health state changed");
-    emit healthEventDetected(ev);
+    Q_EMIT healthEventDetected(ev);
   }
 }
 

@@ -82,6 +82,7 @@ struct CommandResponse {
 
 struct TransportEvent {
   int eventType{0};
+  RequestId requestIdValue{0};
   QDateTime timestamp;
   qint64 bytesTransferred{0};
   int errorCode{0};

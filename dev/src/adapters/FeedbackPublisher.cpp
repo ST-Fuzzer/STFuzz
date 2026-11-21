@@ -1,5 +1,7 @@
 #include "adapters/FeedbackPublisher.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QDateTime>
 #include <QObject>
 #include <QVariant>
@@ -77,7 +79,7 @@ DUTFeedback FeedbackPublisher::createFeedback(FeedbackSource source,
 }
 
 void FeedbackPublisher::publishFeedback(const DUTFeedback& feedback) {
-  emit feedbackReady(feedback);
+  Q_EMIT feedbackReady(feedback);
 }
 
 }  // namespace stfuzz::adapters

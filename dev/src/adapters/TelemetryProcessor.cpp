@@ -1,6 +1,15 @@
 #include "adapters/TelemetryProcessor.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
+#include <QByteArray>
 #include <QDateTime>
+#include <QList>
+#include <QObject>
+#include <QString>
+
+#include "adapters/ITelemetryDecoder.hpp"
+#include "adapters/STFuzzTypes.hpp"
 
 namespace stfuzz::adapters {
 
@@ -8,8 +17,8 @@ TelemetryProcessor::TelemetryProcessor(ITelemetryDecoder* decoder,
                                        QObject* parent)
     : QObject(parent), decoder(decoder) {}
 
-void TelemetryProcessor::setDecoder(ITelemetryDecoder* decoderPtr) {
-  decoder = decoderPtr;
+void TelemetryProcessor::setDecoder(ITelemetryDecoder* decoder_ptr) {
+  decoder = decoder_ptr;
 }
 
 void TelemetryProcessor::clearReceiveBuffer() { receiveBuffer.clear(); }
@@ -34,14 +43,14 @@ void TelemetryProcessor::processReceivedData(const QByteArray& data) {
         QStringLiteral("Receive buffer boundary exceeded max size");
     err.rawFrame = receiveBuffer;
 
-    emit parsingErrorDetected(err);
+    Q_EMIT parsingErrorDetected(err);
     clearReceiveBuffer();
     return;
   }
 
   const QList<QByteArray> frames = extractFrames();
   for (const auto& frame : frames) {
-    if (decoder) {
+    if (decoder != nullptr) {
       const DecodedMessage msg = decoder->decodeFrame(frame);
       dispatchMessage(msg);
     }
@@ -64,18 +73,18 @@ void TelemetryProcessor::dispatchMessage(const DecodedMessage& message) {
     resp.responseType = message.messageType;
     resp.payload = message.payload;
     resp.receivedAt = message.receivedAt;
-    emit commandResponseDecoded(resp);
+    Q_EMIT commandResponseDecoded(resp);
   } else if (message.messageType == 1) {
     TelemetryRecord rec;
     rec.recordType = message.messageType;
     rec.sequenceNumber = message.sequenceNumber;
     rec.timestamp = message.receivedAt;
-    emit telemetryRecordReady(rec);
+    Q_EMIT telemetryRecordReady(rec);
   } else if (message.messageType == 2) {
     TelemetryEvent ev;
     ev.eventType = message.messageType;
     ev.timestamp = message.receivedAt;
-    emit telemetryEventReady(ev);
+    Q_EMIT telemetryEventReady(ev);
   }
 }
 

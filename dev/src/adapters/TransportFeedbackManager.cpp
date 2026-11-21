@@ -1,5 +1,11 @@
 #include "adapters/TransportFeedbackManager.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
+#include <QObject>
+
+#include "adapters/STFuzzTypes.hpp"
+
 namespace stfuzz::adapters {
 
 TransportFeedbackManager::TransportFeedbackManager(QObject* parent)
@@ -10,27 +16,27 @@ void TransportFeedbackManager::onTransportEvent(const TransportEvent& event) {
   updateStatus(event);
 
   if (event.errorCode != 0) {
-    emit transportErrorReported(event);
+    Q_EMIT transportErrorReported(event);
   }
 
   const TransmissionResult result = createTransmissionResult(event);
-  emit commandTransmissionResult(result);
+  Q_EMIT commandTransmissionResult(result);
 }
 
 void TransportFeedbackManager::updateStatus(const TransportEvent& event) {
-  const TransportStatus newStatus =
+  const TransportStatus new_status =
       (event.errorCode == 0) ? TransportStatus::Active : TransportStatus::Error;
 
-  if (currentStatus != newStatus) {
-    currentStatus = newStatus;
-    emit transportStatusChanged(currentStatus);
+  if (currentStatus != new_status) {
+    currentStatus = new_status;
+    Q_EMIT transportStatusChanged(currentStatus);
   }
 }
 
 TransmissionResult TransportFeedbackManager::createTransmissionResult(
-    const TransportEvent& event) const {
+    const TransportEvent& event) {
   TransmissionResult result;
-  result.requestId = 0;
+  result.requestId = event.requestIdValue;
   result.bytesAccepted = event.bytesTransferred;
   result.status = (event.errorCode == 0) ? CommandStatus::Transmitted
                                          : CommandStatus::TransportError;

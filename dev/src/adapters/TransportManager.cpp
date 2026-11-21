@@ -1,41 +1,51 @@
 #include "adapters/TransportManager.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
+#include <QByteArray>
 #include <QDateTime>
+#include <QIODevice>
+#include <QObject>
+#include <QString>
+#include <QtTypes>
+
+#include "adapters/STFuzzTypes.hpp"
 
 namespace stfuzz::adapters {
 
 TransportManager::TransportManager(QIODevice* device, QObject* parent)
     : QObject(parent), deviceState(device) {
-  if (deviceState) {
+  if (deviceState != nullptr) {
     connect(deviceState, &QIODevice::readyRead, this,
             &TransportManager::handleReadyRead);
   }
 }
 
 void TransportManager::setDevice(QIODevice* device) {
-  if (deviceState) {
+  if (deviceState != nullptr) {
     disconnect(deviceState, nullptr, this, nullptr);
   }
   deviceState = device;
-  if (deviceState) {
+  if (deviceState != nullptr) {
     connect(deviceState, &QIODevice::readyRead, this,
             &TransportManager::handleReadyRead);
   }
 }
 
-void TransportManager::transmit(const QByteArray& data, RequestId requestId) {
-  Q_UNUSED(requestId);
-  if (!deviceState || !deviceState->isOpen()) {
+void TransportManager::transmit(const QByteArray& data,
+                                RequestId /*request_id*/) {
+  if (deviceState == nullptr || !deviceState->isOpen()) {
     TransportEvent event;
     event.eventType = -1;
     event.timestamp = QDateTime::currentDateTimeUtc();
     event.errorCode = 1;
     event.description = QStringLiteral("Device is not accessible or closed");
-    emit transportEventOccurred(event);
+    Q_EMIT transportEventOccurred(event);
     return;
   }
 
   const qint64 written = deviceState->write(data);
+
   TransportEvent event;
   event.timestamp = QDateTime::currentDateTimeUtc();
   event.bytesTransferred = written;
@@ -45,22 +55,20 @@ void TransportManager::transmit(const QByteArray& data, RequestId requestId) {
   } else {
     event.errorCode = 0;
   }
-  emit transportEventOccurred(event);
+  Q_EMIT transportEventOccurred(event);
 }
 
 void TransportManager::onCommandReady(const QByteArray& data, RequestId id) {
   transmit(data, id);
 }
 
-void TransportManager::onConnectionStateChanged(ConnectionState state) {
-  Q_UNUSED(state);
-}
+void TransportManager::onConnectionStateChanged(ConnectionState /*state*/) {}
 
 void TransportManager::handleReadyRead() {
-  if (deviceState) {
+  if (deviceState != nullptr) {
     const QByteArray data = deviceState->readAll();
     if (!data.isEmpty()) {
-      emit rawDataReceived(data);
+      Q_EMIT rawDataReceived(data);
     }
   }
 }

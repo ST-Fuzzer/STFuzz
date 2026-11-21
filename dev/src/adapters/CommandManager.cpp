@@ -1,11 +1,13 @@
 #include "adapters/CommandManager.hpp"
 
+#include <QtCore/qtmetamacros.h>
+
 #include <QDataStream>
 #include <QDateTime>
 #include <QIODevice>
 #include <QObject>
 #include <QString>
-#include <QtGlobal>
+#include <QtTypes>
 
 #include "adapters/STFuzzTypes.hpp"
 
@@ -22,8 +24,8 @@ RequestId CommandManager::submitCommand(const Command& command) {
   const QByteArray data = encodeCommand(command);
   const CommandContext context = createContext(command, id);
 
-  emit contextCreated(context);
-  emit commandReady(data, id);
+  Q_EMIT contextCreated(context);
+  Q_EMIT commandReady(data, id);
 
   return id;
 }

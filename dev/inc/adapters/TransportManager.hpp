@@ -17,7 +17,7 @@ class TransportManager : public QObject {
   ~TransportManager() override = default;
 
   void setDevice(QIODevice* device);
-  void transmit(const QByteArray& data, RequestId requestId);
+  void transmit(const QByteArray& data, RequestId request_id);
 
  public slots:
   void onCommandReady(const QByteArray& data, RequestId id);

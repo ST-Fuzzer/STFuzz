@@ -26,8 +26,8 @@ class TransportFeedbackManager : public QObject {
 
  private:
   void updateStatus(const TransportEvent& event);
-  TransmissionResult createTransmissionResult(
-      const TransportEvent& event) const;
+  static TransmissionResult createTransmissionResult(
+      const TransportEvent& event);
 
   TransportStatus currentStatus{TransportStatus::Disconnected};
   TransportEvent lastError;
