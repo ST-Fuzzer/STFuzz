@@ -2,18 +2,17 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <vector>
 
 #include "utils/ieee802154_protocol.hpp"
 
-namespace stfuzz::utils {
+namespace stfuzz::utils::serializer {
 
-std::optional<std::vector<uint8_t>> SerializeFrame(
-    const ProtocolModel& protocol, const void* frame_model) {
+std::vector<uint8_t> SerializeFrame(const ProtocolModel& protocol,
+                                    const void* frame_model) {
   if (frame_model == nullptr ||
       (protocol.fields == nullptr && protocol.num_fields != 0)) {
-    return std::nullopt;
+    return {};
   }
 
   std::vector<uint8_t> out;
@@ -24,7 +23,7 @@ std::optional<std::vector<uint8_t>> SerializeFrame(
       continue;
     }
     if (field.write_bytes == nullptr) {
-      return std::nullopt;
+      return {};
     }
     field.write_bytes(frame_model, out);
   }
@@ -32,4 +31,4 @@ std::optional<std::vector<uint8_t>> SerializeFrame(
   return out;
 }
 
-}  // namespace stfuzz::utils
+}  // namespace stfuzz::utils::serializer

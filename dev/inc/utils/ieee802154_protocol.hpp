@@ -6,11 +6,17 @@
 
 namespace stfuzz::utils {
 
+/**
+ * @brief Descriptor for a single protocol field and its serialization hooks.
+ */
 struct FieldSpec {
   bool (*is_present)(const void* frame);
   void (*write_bytes)(const void* frame, std::vector<uint8_t>& out);
 };
 
+/**
+ * @brief Ordered table of field descriptors defining a protocol's wire layout.
+ */
 struct ProtocolModel {
   const FieldSpec* fields;
   size_t num_fields;
@@ -135,6 +141,9 @@ enum class Ieee802154CommandId : uint8_t {
   kVendorSpecific = 0x24,
 };
 
+/**
+ * @brief Structured representation of an IEEE 802.15.4 MAC frame.
+ */
 struct Ieee802154FrameModel {
   // Frame Control Field (FCF).
   Ieee802154Version version{};
@@ -193,8 +202,12 @@ struct Ieee802154FrameModel {
   uint32_t fcs{};
 };
 
+/**
+ * @brief Returns the IEEE 802.15.4 protocol model used to serialize frames.
+ * @return Reference to the static IEEE 802.15.4 ProtocolModel descriptor.
+ */
 // TODO(nader): Replace temporary stub implementation with teammate's protocol
-// model
+// model.
 const ProtocolModel& GetIeee802154ProtocolModel();
 
 }  // namespace stfuzz::utils

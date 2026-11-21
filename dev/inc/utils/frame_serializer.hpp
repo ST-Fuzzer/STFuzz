@@ -1,15 +1,21 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
 #include <vector>
 
 #include "utils/ieee802154_protocol.hpp"
 
-namespace stfuzz::utils {
+namespace stfuzz::utils::serializer {
 
-// Serializes `frame_model` according to `protocol` and returns the raw bytes.
-// Returns `std::nullopt` if `frame_model` is null or a field writer is null.
-[[nodiscard]] std::optional<std::vector<uint8_t>> SerializeFrame(
-    const ProtocolModel& protocol, const void* frame_model);
-}  // namespace stfuzz::utils
+/**
+ * @brief Serializes a structured protocol frame model into raw on-air bytes
+ *        for transmission or fuzzing injection.
+ *
+ * @param protocol Protocol descriptor defining the ordered fields and writers.
+ * @param frame_model Pointer to the populated frame structure to serialize.
+ * @return Serialized byte vector, or an empty vector on invalid input.
+ */
+std::vector<uint8_t> SerializeFrame(const ProtocolModel& protocol,
+                                    const void* frame_model);
+
+}  // namespace stfuzz::utils::serializer
