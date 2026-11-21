@@ -1,12 +1,15 @@
 #include "core/device_manager.hpp"
 
+#include <QtCore/qnamespace.h>
+#include <QtCore/qstringliteral.h>
+#include <QtCore/qtypes.h>
+
 #include <QList>
 #include <QMetaType>
 #include <QObject>
 #include <QSerialPortInfo>
 #include <QSet>
 #include <QString>
-#include <QtGlobal>
 
 namespace stfuzz::core {
 
