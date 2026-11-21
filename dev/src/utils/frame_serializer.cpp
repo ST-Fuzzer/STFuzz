@@ -1,5 +1,12 @@
 #include "utils/frame_serializer.hpp"
 
+#include <cstddef>
+#include <cstdint>
+#include <optional>
+#include <vector>
+
+#include "utils/ieee802154_protocol.hpp"
+
 namespace stfuzz::utils {
 
 std::optional<std::vector<uint8_t>> SerializeFrame(
