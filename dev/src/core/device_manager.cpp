@@ -1,7 +1,12 @@
 #include "core/device_manager.hpp"
 
+#include <QList>
+#include <QMetaType>
+#include <QObject>
 #include <QSerialPortInfo>
 #include <QSet>
+#include <QString>
+#include <QtGlobal>
 
 namespace stfuzz::core {
 
@@ -65,7 +70,7 @@ void DeviceManager::ScanPorts() {
       it->connection_state = ConnectionState::kDisconnected;
       it->health = DeviceHealth::kUnknown;
 
-      emit DeviceDisconnected(it.value());
+      DeviceDisconnected(it.value());
     }
   }
 }
@@ -96,9 +101,9 @@ void DeviceManager::UpdateDevice(const QSerialPortInfo& port_info) {
   devices_.insert(port_name, device);
 
   if (is_new_device) {
-    emit DeviceAdded(device);
+    DeviceAdded(device);
   } else {
-    emit DeviceUpdated(device);
+    DeviceUpdated(device);
   }
 }
 
@@ -125,7 +130,7 @@ DeviceState DeviceManager::GetDevice(DeviceRole role) const {
       return device;
     }
   }
-  return DeviceState();
+  return {};
 }
 
 void DeviceManager::SetRole(const QString& port_name, DeviceRole role) {
@@ -139,13 +144,13 @@ void DeviceManager::SetRole(const QString& port_name, DeviceRole role) {
     for (auto it = devices_.begin(); it != devices_.end(); ++it) {
       if (it.key() != port_name && it->role == role) {
         it->role = DeviceRole::kNone;
-        emit DeviceUpdated(it.value());
+        DeviceUpdated(it.value());
       }
     }
   }
 
   target->role = role;
-  emit DeviceUpdated(target.value());
+  DeviceUpdated(target.value());
 }
 
 void DeviceManager::SetBaudRate(const QString& port_name, BaudRate rate) {
@@ -155,7 +160,7 @@ void DeviceManager::SetBaudRate(const QString& port_name, BaudRate rate) {
   }
 
   it->baud_rate = rate;
-  emit DeviceUpdated(it.value());
+  DeviceUpdated(it.value());
 }
 
 ConnectionState DeviceManager::GetConnectionState() const {
@@ -175,7 +180,7 @@ void DeviceManager::OnDeviceHealthChanged(const QString& port_name,
   }
 
   it->health = health;
-  emit DeviceUpdated(it.value());
+  DeviceUpdated(it.value());
 }
 
 }  // namespace stfuzz::core
