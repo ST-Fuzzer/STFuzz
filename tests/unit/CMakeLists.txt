@@ -1,4 +1,4 @@
 add_executable(unit_test unit_placeholder.cpp)
 target_link_libraries(unit_test PRIVATE stfuzz_test_main)
 target_link_libraries(unit_test PRIVATE stfuzz_utils stfuzz_adapters stfuzz_core)
-gtest_discover_tests(unit_test PROPERTIES LABELS unit)
+gtest_discover_tests(unit_test DISCOVERY_MODE PRE_TEST PROPERTIES LABELS unit)

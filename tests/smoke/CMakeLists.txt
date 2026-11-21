@@ -1,3 +1,3 @@
 add_executable(smoke_test smoke_placeholder.cpp)
 target_link_libraries(smoke_test PRIVATE stfuzz_test_main)
-gtest_discover_tests(smoke_test PROPERTIES LABELS smoke)
+gtest_discover_tests(smoke_test DISCOVERY_MODE PRE_TEST PROPERTIES LABELS smoke)
