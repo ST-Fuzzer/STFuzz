@@ -1,5 +1,9 @@
 $ErrorActionPreference = "Stop"
 
+# Configure MSYS2 UCRT64 toolchain and Qt6 environment paths
+$env:PATH = "C:\msys64\ucrt64\bin;" + $env:PATH
+$env:CMAKE_PREFIX_PATH = "C:\msys64\ucrt64"
+
 cmake -S . -B build -G Ninja `
     -DCMAKE_BUILD_TYPE=Release `
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON `
