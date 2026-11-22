@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <vector>
 
 #include "utils/ErrorCode.hpp"
@@ -14,13 +13,18 @@ struct StatusReport {
   std::vector<uint8_t> payload;
 };
 
-using StatusCallback = std::function<void(const StatusReport& report)>;
+class IStatusObserver {
+ public:
+  virtual ~IStatusObserver() = default;
+
+  virtual void OnStatus(const StatusReport& report) = 0;
+};
 
 class IStatus {
  public:
   virtual ~IStatus() = default;
 
-  virtual void RegisterStatusCallback(StatusCallback callback) = 0;
+  virtual void Subscribe(IStatusObserver* observer) = 0;
 };
 
 }  // namespace adaptor
