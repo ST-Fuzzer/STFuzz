@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <functional>
 #include <vector>
 
 #include "utils/ErrorCode.hpp"
@@ -9,15 +8,19 @@
 namespace stfuzz {
 namespace adaptor {
 
-using FrameCallback =
-    std::function<void(const std::vector<uint8_t>& raw_frame)>;
+class IFrameObserver {
+ public:
+  virtual ~IFrameObserver() = default;
+
+  virtual void OnFrame(const std::vector<uint8_t>& raw_frame) = 0;
+};
 
 class IFrame {
  public:
   virtual ~IFrame() = default;
 
   virtual utils::ErrorCode SendFrame(const std::vector<uint8_t>& raw_frame) = 0;
-  virtual void RegisterFrameCallback(FrameCallback callback) = 0;
+  virtual void Subscribe(IFrameObserver* observer) = 0;
 };
 
 }  // namespace adaptor
