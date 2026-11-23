@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <vector>
 
-#include "adaptor/StatusSubscriber.hpp"
+#include "core/adaptors/StatusSubscriber.hpp"
 #include "utils/ErrorCode.hpp"
 
 namespace stfuzz {

@@ -10,6 +10,12 @@ add_library(stfuzz_adaptors STATIC
   ${STFUZZ_INC}/core/adaptors/StatusSubscriber.hpp
   ${STFUZZ_INC}/core/adaptors/FeedbackInterface.hpp
   ${STFUZZ_INC}/core/adaptors/FeedbackSubscriber.hpp
+  ${STFUZZ_INC}/core/adaptors/dut_adaptor/DUTAdaptor.hpp
+  ${STFUZZ_INC}/core/adaptors/dut_adaptor/SerialLink.hpp
+  ${STFUZZ_INC}/core/adaptors/dut_adaptor/FeedbackParser.hpp
+  ${STFUZZ_INC}/core/adaptors/dut_adaptor/StatusManager.hpp
+  ${STFUZZ_INC}/core/adaptors/dut_adaptor/DUTConfig.hpp
+  ${STFUZZ_INC}/core/adaptors/dut_adaptor/DUTMessage.hpp
 )
 target_include_directories(stfuzz_adaptors PUBLIC ${STFUZZ_INC})
 target_link_libraries(stfuzz_adaptors PUBLIC stfuzz_utils)

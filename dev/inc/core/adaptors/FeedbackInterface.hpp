@@ -1,6 +1,6 @@
 #pragma once
 
-#include "adaptor/FeedbackSubscriber.hpp"
+#include "core/adaptors/FeedbackSubscriber.hpp"
 #include "utils/ErrorCode.hpp"
 
 namespace stfuzz {
