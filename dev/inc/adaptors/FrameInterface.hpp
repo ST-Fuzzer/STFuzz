@@ -3,24 +3,19 @@
 #include <cstdint>
 #include <vector>
 
+#include "adaptor/FrameSubscriber.hpp"
 #include "utils/ErrorCode.hpp"
 
 namespace stfuzz {
 namespace adaptor {
-
-class IFrameObserver {
- public:
-  virtual ~IFrameObserver() = default;
-
-  virtual void OnFrame(const std::vector<uint8_t>& raw_frame) = 0;
-};
 
 class IFrame {
  public:
   virtual ~IFrame() = default;
 
   virtual utils::ErrorCode SendFrame(const std::vector<uint8_t>& raw_frame) = 0;
-  virtual void Subscribe(IFrameObserver* observer) = 0;
+  virtual utils::ErrorCode Subscribe(IFrameSubscriber* subscriber) = 0;
+  virtual void Unsubscribe(IFrameSubscriber* subscriber) = 0;
 };
 
 }  // namespace adaptor

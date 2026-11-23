@@ -1,25 +1,17 @@
 #pragma once
 
-#include <string>
-#include <unordered_map>
+#include "adaptor/FeedbackSubscriber.hpp"
+#include "utils/ErrorCode.hpp"
 
 namespace stfuzz {
 namespace adaptor {
-
-using FeedbackMap = std::unordered_map<std::string, std::string>;
-
-class IFeedbackObserver {
- public:
-  virtual ~IFeedbackObserver() = default;
-
-  virtual void OnFeedback(const FeedbackMap& feedback) = 0;
-};
 
 class IFeedback {
  public:
   virtual ~IFeedback() = default;
 
-  virtual void Subscribe(IFeedbackObserver* observer) = 0;
+  virtual utils::ErrorCode Subscribe(IFeedbackSubscriber* subscriber) = 0;
+  virtual void Unsubscribe(IFeedbackSubscriber* subscriber) = 0;
 };
 
 }  // namespace adaptor

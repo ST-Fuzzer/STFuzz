@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "adaptor/StatusSubscriber.hpp"
 #include "utils/ErrorCode.hpp"
 
 namespace stfuzz {
@@ -13,18 +14,12 @@ struct StatusReport {
   std::vector<uint8_t> payload;
 };
 
-class IStatusObserver {
- public:
-  virtual ~IStatusObserver() = default;
-
-  virtual void OnStatus(const StatusReport& report) = 0;
-};
-
 class IStatus {
  public:
   virtual ~IStatus() = default;
 
-  virtual void Subscribe(IStatusObserver* observer) = 0;
+  virtual utils::ErrorCode Subscribe(IStatusSubscriber* subscriber) = 0;
+  virtual void Unsubscribe(IStatusSubscriber* subscriber) = 0;
 };
 
 }  // namespace adaptor
