@@ -1,5 +1,5 @@
 #pragma once
 
-namespace stfuzz::core {
+namespace stfuzz::adaptors {
 void Placeholder();
 }
