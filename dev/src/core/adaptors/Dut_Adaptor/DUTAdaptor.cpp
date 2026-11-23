@@ -5,6 +5,7 @@
 #include <optional>
 #include <string>
 #include <vector>
+#include <utility>
 
 #include "core/adaptors/FeedbackSubscriber.hpp"
 #include "core/adaptors/StatusSubscriber.hpp"
@@ -15,7 +16,8 @@ namespace stfuzz::adaptor {
 
 // IAdaptor
 
-DUTAdaptor::DUTAdaptor() : serial_link_(config_) {}
+DUTAdaptor::DUTAdaptor(SerialPortSettings serial_settings)
+    : serial_link_(std::move(serial_settings)) {}
 
 utils::ErrorCode DUTAdaptor::Connect() {
   const auto result = config_.Validate();

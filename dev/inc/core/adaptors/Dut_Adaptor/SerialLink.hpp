@@ -2,31 +2,39 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "core/adaptors/SerialInterface.hpp"
 #include "utils/ErrorCode.hpp"
 
-namespace stfuzz {
-namespace adaptor {
+namespace stfuzz::adaptor {
 
-class DUTConfig;
+struct SerialPortSettings {
+  std::string port_name;
+  std::uint32_t baud_rate;
+};
 
 class SerialLink : public ISerial {
  public:
-  explicit SerialLink(const DUTConfig& config);
+  explicit SerialLink(SerialPortSettings settings);
+  ~SerialLink() override;
+
+  SerialLink(const SerialLink&) = delete;
+  SerialLink& operator=(const SerialLink&) = delete;
 
   utils::ErrorCode Open() override;
   void Close() override;
   bool IsOpen() const override;
 
   utils::ErrorCode Write(const std::vector<uint8_t>& data) override;
+
   utils::ErrorCode Read(std::vector<uint8_t>& buffer,
                         size_t max_bytes) override;
 
  private:
-  const DUTConfig& config_;
+  SerialPortSettings settings_;
+  void* handle_ = nullptr;
 };
 
-}  // namespace adaptor
-}  // namespace stfuzz
+}  // namespace stfuzz::adaptor

@@ -25,8 +25,9 @@ class DUTAdaptor : public IAdaptor,
                    public IStatus,
                    public IFeedback {
  public:
+  explicit DUTAdaptor(SerialPortSettings serial_settings);
+
   // IAdaptor
-  DUTAdaptor();
   utils::ErrorCode Connect() override;
   void Disconnect() override;
   bool IsConnected() const override;
