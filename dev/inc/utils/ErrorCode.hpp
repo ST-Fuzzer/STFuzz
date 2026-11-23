@@ -43,6 +43,12 @@ enum class ErrorCode : uint8_t {
   kResetFailed = 180,
   kTargetHalted,
   kTargetMemoryAccessFailed,
+
+  // Core: Device Manager (200 - 229)
+  kPortScanFailed = 200,
+  kDeviceNotSupported,
+  kRoleNotAssigned,
+  kInvalidBaudRate,
 };
 
 constexpr bool IsOk(ErrorCode code) noexcept { return code == ErrorCode::kOk; }
