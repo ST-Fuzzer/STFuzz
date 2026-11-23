@@ -15,10 +15,7 @@
 #include "setupapi.h"
 #include "utils/ErrorCode.hpp"
 
-// Windows SDK declarations are provided through transitive Windows headers.
-// NOLINTBEGIN(misc-include-cleaner)
-
-namespace stfuzz {  // NOLINT(modernize-concat-nested-namespaces)
+namespace stfuzz {
 namespace core {
 namespace device_manager {
 
