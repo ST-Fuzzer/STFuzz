@@ -5,7 +5,7 @@ Checks: >
   clang-analyzer-core.*,
   clang-analyzer-cplusplus.*,
   google-*,
-  misc-include-cleaner,
+  -misc-include-cleaner,
   modernize-*,
   -modernize-use-trailing-return-type,
   -modernize-concat-nested-namespaces,
