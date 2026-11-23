@@ -4,12 +4,13 @@
 #include <cstdint>
 #include <optional>
 #include <string>
-#include <vector>
 #include <utility>
+#include <vector>
 
 #include "core/adaptors/FeedbackSubscriber.hpp"
 #include "core/adaptors/StatusSubscriber.hpp"
 #include "core/adaptors/dut_adaptor/DUTMessage.hpp"
+#include "core/adaptors/dut_adaptor/SerialLink.hpp"
 #include "utils/ErrorCode.hpp"
 
 namespace stfuzz::adaptor {

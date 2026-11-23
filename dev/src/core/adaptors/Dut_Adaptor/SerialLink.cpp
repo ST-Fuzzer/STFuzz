@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "utils/ErrorCode.hpp"
 
@@ -18,7 +19,14 @@
 #define NOMINMAX
 #endif
 
-#include <windows.h>
+#include <errhandlingapi.h>
+#include <fileapi.h>
+#include <handleapi.h>
+#include <minwindef.h>
+#include <winbase.h>
+#include <windef.h>  // IWYU pragma: keep
+#include <winerror.h>
+#include <winnt.h>
 
 #endif
 
@@ -29,8 +37,7 @@ namespace stfuzz::adaptor {
 namespace {
 
 utils::ErrorCode MapOpenError(DWORD error) {
-  if (error == ERROR_FILE_NOT_FOUND ||
-      error == ERROR_PATH_NOT_FOUND ||
+  if (error == ERROR_FILE_NOT_FOUND || error == ERROR_PATH_NOT_FOUND ||
       error == ERROR_INVALID_NAME) {
     return utils::ErrorCode::kPortNotFound;
   }
@@ -45,9 +52,7 @@ utils::ErrorCode MapOpenError(DWORD error) {
 SerialLink::SerialLink(SerialPortSettings settings)
     : settings_(std::move(settings)) {}
 
-SerialLink::~SerialLink() {
-  Close();
-}
+SerialLink::~SerialLink() { Close(); }
 
 // Open serial connection
 
@@ -64,26 +69,17 @@ utils::ErrorCode SerialLink::Open() {
 
   std::string device_path = settings_.port_name;
 
-  // Add Windows COM device prefix if necessary.
-
-  if (device_path.rfind("\\\\.\\", 0U) != 0U) {
-    device_path = "\\\\.\\" + device_path;
+  if (device_path.rfind(R"(\\.\)", 0U) != 0U) {
+    device_path = R"(\\.\)" + device_path;
   }
 
-  HANDLE handle = CreateFileA(
-      device_path.c_str(),
-      GENERIC_READ | GENERIC_WRITE,
-      0,
-      nullptr,
-      OPEN_EXISTING,
-      FILE_ATTRIBUTE_NORMAL,
-      nullptr);
+  auto* const handle =
+      CreateFileA(device_path.c_str(), GENERIC_READ | GENERIC_WRITE, 0, nullptr,
+                  OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 
   if (handle == INVALID_HANDLE_VALUE) {
     return MapOpenError(GetLastError());
   }
-
-  // Retrieve current serial configuration.
 
   DCB dcb{};
 
@@ -94,7 +90,7 @@ utils::ErrorCode SerialLink::Open() {
     return utils::ErrorCode::kPortConfigFailed;
   }
 
-  // Configure UART: 115200 8N1.
+  // Configure UART: 8N1.
 
   dcb.BaudRate = settings_.baud_rate;
   dcb.ByteSize = 8U;
@@ -134,8 +130,6 @@ utils::ErrorCode SerialLink::Open() {
     return utils::ErrorCode::kPortConfigFailed;
   }
 
-  // Clear any previous buffered data.
-
   PurgeComm(handle, PURGE_RXCLEAR | PURGE_TXCLEAR);
 
   handle_ = handle;
@@ -152,21 +146,16 @@ utils::ErrorCode SerialLink::Open() {
 // Close serial connection
 
 void SerialLink::Close() {
-
 #ifdef _WIN32
 
   if (handle_ == nullptr) {
     return;
   }
 
-  HANDLE handle = static_cast<HANDLE>(handle_);
+  auto* const handle = static_cast<HANDLE>(handle_);
 
-  PurgeComm(
-      handle,
-      PURGE_RXABORT |
-      PURGE_RXCLEAR |
-      PURGE_TXABORT |
-      PURGE_TXCLEAR);
+  PurgeComm(handle,
+            PURGE_RXABORT | PURGE_RXCLEAR | PURGE_TXABORT | PURGE_TXCLEAR);
 
   CloseHandle(handle);
 
@@ -181,15 +170,11 @@ void SerialLink::Close() {
 
 // Check connection state
 
-bool SerialLink::IsOpen() const {
-  return handle_ != nullptr;
-}
+bool SerialLink::IsOpen() const { return handle_ != nullptr; }
 
 // Transmit bytes
 
-utils::ErrorCode SerialLink::Write(
-    const std::vector<uint8_t>& data) {
-
+utils::ErrorCode SerialLink::Write(const std::vector<uint8_t>& data) {
   if (!IsOpen()) {
     return utils::ErrorCode::kNotConnected;
   }
@@ -200,27 +185,20 @@ utils::ErrorCode SerialLink::Write(
 
 #ifdef _WIN32
 
-  HANDLE handle = static_cast<HANDLE>(handle_);
+  auto* const handle = static_cast<HANDLE>(handle_);
 
-  size_t offset = 0U;
+  std::size_t offset = 0U;
 
   while (offset < data.size()) {
+    const auto remaining = data.size() - offset;
 
-    const size_t remaining = data.size() - offset;
-
-    const size_t chunk_size = std::min(
-        remaining,
-        static_cast<size_t>(MAXDWORD));
+    const auto chunk_size =
+        std::min(remaining, static_cast<std::size_t>(MAXDWORD));
 
     DWORD bytes_written = 0U;
 
-    if (WriteFile(
-            handle,
-            data.data() + offset,
-            static_cast<DWORD>(chunk_size),
-            &bytes_written,
-            nullptr) == FALSE) {
-
+    if (WriteFile(handle, data.data() + offset, static_cast<DWORD>(chunk_size),
+                  &bytes_written, nullptr) == FALSE) {
       return utils::ErrorCode::kWriteFailed;
     }
 
@@ -242,10 +220,8 @@ utils::ErrorCode SerialLink::Write(
 
 // Receive raw bytes
 
-utils::ErrorCode SerialLink::Read(
-    std::vector<uint8_t>& buffer,
-    size_t max_bytes) {
-
+utils::ErrorCode SerialLink::Read(std::vector<uint8_t>& buffer,
+                                  size_t max_bytes) {
   buffer.clear();
 
   if (!IsOpen()) {
@@ -258,34 +234,29 @@ utils::ErrorCode SerialLink::Read(
 
 #ifdef _WIN32
 
-  HANDLE handle = static_cast<HANDLE>(handle_);
+  auto* const handle = static_cast<HANDLE>(handle_);
 
   DWORD communication_errors = 0U;
-
   COMSTAT communication_status{};
 
-  if (ClearCommError(
-          handle,
-          &communication_errors,
-          &communication_status) == FALSE) {
-
+  if (ClearCommError(handle, &communication_errors, &communication_status) ==
+      FALSE) {
     return utils::ErrorCode::kReadFailed;
   }
 
-  constexpr DWORD read_error_flags =
+  constexpr DWORD kReadErrorFlags =
       CE_RXOVER | CE_OVERRUN | CE_FRAME | CE_RXPARITY | CE_BREAK;
 
-  if ((communication_errors & read_error_flags) != 0U) {
+  if ((communication_errors & kReadErrorFlags) != 0U) {
     return utils::ErrorCode::kReadFailed;
   }
 
   // Determine how many bytes are currently available.
 
-  const size_t available_bytes =
-      static_cast<size_t>(communication_status.cbInQue);
+  const auto available_bytes =
+      static_cast<std::size_t>(communication_status.cbInQue);
 
-  const size_t bytes_to_read =
-      std::min(max_bytes, available_bytes);
+  const auto bytes_to_read = std::min(max_bytes, available_bytes);
 
   if (bytes_to_read == 0U) {
     return utils::ErrorCode::kOk;
@@ -295,19 +266,13 @@ utils::ErrorCode SerialLink::Read(
 
   DWORD bytes_read = 0U;
 
-  if (ReadFile(
-          handle,
-          buffer.data(),
-          static_cast<DWORD>(bytes_to_read),
-          &bytes_read,
-          nullptr) == FALSE) {
-
+  if (ReadFile(handle, buffer.data(), static_cast<DWORD>(bytes_to_read),
+               &bytes_read, nullptr) == FALSE) {
     buffer.clear();
-
     return utils::ErrorCode::kReadFailed;
   }
 
-  buffer.resize(static_cast<size_t>(bytes_read));
+  buffer.resize(static_cast<std::size_t>(bytes_read));
 
   return utils::ErrorCode::kOk;
 
