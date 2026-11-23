@@ -12,6 +12,7 @@ Checks: >
   readability-*,
   -readability-magic-numbers,
   -readability-identifier-length
+  -modernize-concat-nested-namespaces
 
 WarningsAsErrors: '*'
 FormatStyle: file
