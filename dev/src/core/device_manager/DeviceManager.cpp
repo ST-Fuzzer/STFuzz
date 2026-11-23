@@ -15,7 +15,10 @@
 #include "setupapi.h"
 #include "utils/ErrorCode.hpp"
 
-namespace stfuzz {
+// Windows SDK declarations are provided through transitive Windows headers.
+// NOLINTBEGIN(misc-include-cleaner)
+
+namespace stfuzz {  // NOLINT(modernize-concat-nested-namespaces)
 namespace core {
 namespace device_manager {
 
@@ -177,6 +180,8 @@ void DeviceManager::UpdateDevice(const DeviceState& found) {
 
 std::vector<DeviceState> DeviceManager::ShowDevices() const {
   std::vector<DeviceState> result;
+  result.reserve(devices_.size());
+
   for (const auto& entry : devices_) {
     result.push_back(entry.second);
   }
