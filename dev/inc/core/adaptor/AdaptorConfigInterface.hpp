@@ -7,20 +7,22 @@
 
 namespace stfuzz {
 namespace core {
-namespace adaptors {
+namespace adaptor {
 
 using ConfigMap = std::unordered_map<std::string, std::string>;
 
-class IAdaptor {
+class IAdaptorConfig {
  public:
-  virtual ~IAdaptor() = default;
+  virtual ~IAdaptorConfig() = default;
 
+  [[nodiscard]] virtual stfuzz::utils::ErrorCode SetParameter(
+      const std::string& key, const std::string& value) = 0;
   [[nodiscard]] virtual bool HasKey(const std::string& key) const = 0;
   [[nodiscard]] virtual stfuzz::utils::ErrorCode GetValue(
-      const std::string* value, const std::string& key);
+      const std::string& key, std::string& value) const = 0;
   [[nodiscard]] virtual const ConfigMap& Entries() const = 0;
 };
 
-}  // namespace adaptors
+}  // namespace adaptor
 }  // namespace core
 }  // namespace stfuzz
