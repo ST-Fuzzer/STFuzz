@@ -21,7 +21,7 @@ class IAdaptorSubscriber {
  public:
   virtual ~IAdaptorSubscriber() = default;
 
-  virtual void Update(const AdaptorMessage& message) = 0;
+  virtual void UpdateMessageReceived(const AdaptorMessage& message) = 0;
 };
 
 }  // namespace adaptor
