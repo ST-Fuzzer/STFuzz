@@ -24,9 +24,11 @@ namespace {
 
 constexpr std::uint16_t kStMicroelectronicsVendorId = 0x0483;
 
-utils::ErrorCode ParseVendorId(std::uint16_t* vendor_id, const std::string& hardware_id) {
+utils::ErrorCode ParseVendorId(std::uint16_t* vendor_id,
+                               const std::string& hardware_id) {
   const std::size_t position = hardware_id.find("VID_");
-  if (vendor_id == nullptr || position == std::string::npos || hardware_id.size() < position + 8) {
+  if (vendor_id == nullptr || position == std::string::npos ||
+      hardware_id.size() < position + 8) {
     return utils::ErrorCode::kInvalidArgument;
   }
 
@@ -39,19 +41,21 @@ utils::ErrorCode ParseVendorId(std::uint16_t* vendor_id, const std::string& hard
   return utils::ErrorCode::kOk;
 }
 
-std::string GetDeviceProperty(HDEVINFO device_info, SP_DEVINFO_DATA* device_data, DWORD property) {
+std::string GetDeviceProperty(HDEVINFO device_info,
+                              SP_DEVINFO_DATA* device_data, DWORD property) {
   std::array<char, 256> buffer{};
-  if (SetupDiGetDeviceRegistryPropertyA(device_info, device_data, property, nullptr,
-                                        reinterpret_cast<PBYTE>(buffer.data()),
-                                        static_cast<DWORD>(buffer.size() - 1), nullptr) == 0) {
+  if (SetupDiGetDeviceRegistryPropertyA(
+          device_info, device_data, property, nullptr,
+          reinterpret_cast<PBYTE>(buffer.data()),
+          static_cast<DWORD>(buffer.size() - 1), nullptr) == 0) {
     return {};
   }
   return {buffer.data()};
 }
 
 std::string GetPortName(HDEVINFO device_info, SP_DEVINFO_DATA* device_data) {
-  const HKEY key =
-      SetupDiOpenDevRegKey(device_info, device_data, DICS_FLAG_GLOBAL, 0, DIREG_DEV, KEY_READ);
+  const HKEY key = SetupDiOpenDevRegKey(
+      device_info, device_data, DICS_FLAG_GLOBAL, 0, DIREG_DEV, KEY_READ);
   if (key == INVALID_HANDLE_VALUE) {
     return {};
   }
@@ -59,8 +63,9 @@ std::string GetPortName(HDEVINFO device_info, SP_DEVINFO_DATA* device_data) {
   std::array<char, 256> name{};
   auto size = static_cast<DWORD>(name.size() - 1);
   DWORD type = 0;
-  const LONG result = RegQueryValueExA(key, "PortName", nullptr, &type,
-                                       reinterpret_cast<LPBYTE>(name.data()), &size);
+  const LONG result =
+      RegQueryValueExA(key, "PortName", nullptr, &type,
+                       reinterpret_cast<LPBYTE>(name.data()), &size);
   RegCloseKey(key);
   if (result != ERROR_SUCCESS || type != REG_SZ) {
     return {};
@@ -71,31 +76,36 @@ std::string GetPortName(HDEVINFO device_info, SP_DEVINFO_DATA* device_data) {
 utils::ErrorCode ListSerialPorts(std::vector<DeviceState>* devices) {
   GUID ports_guid{};
   DWORD guid_count = 0;
-  if (SetupDiClassGuidsFromNameA("Ports", &ports_guid, 1, &guid_count) == 0 || guid_count == 0) {
+  if (SetupDiClassGuidsFromNameA("Ports", &ports_guid, 1, &guid_count) == 0 ||
+      guid_count == 0) {
     return utils::ErrorCode::kPortScanFailed;
   }
 
-  const HDEVINFO device_info = SetupDiGetClassDevsA(&ports_guid, nullptr, nullptr, DIGCF_PRESENT);
+  const HDEVINFO device_info =
+      SetupDiGetClassDevsA(&ports_guid, nullptr, nullptr, DIGCF_PRESENT);
   if (device_info == INVALID_HANDLE_VALUE) {
     return utils::ErrorCode::kPortScanFailed;
   }
 
   SP_DEVINFO_DATA device_data{};
   device_data.cbSize = sizeof(device_data);
-  for (DWORD index = 0; SetupDiEnumDeviceInfo(device_info, index, &device_data) != 0; ++index) {
+  for (DWORD index = 0;
+       SetupDiEnumDeviceInfo(device_info, index, &device_data) != 0; ++index) {
     DeviceState device;
     device.port_name = GetPortName(device_info, &device_data);
     if (device.port_name.rfind("COM", 0) != 0) {
       continue;
     }
 
-    device.device_name = GetDeviceProperty(device_info, &device_data, SPDRP_DEVICEDESC);
+    device.device_name =
+        GetDeviceProperty(device_info, &device_data, SPDRP_DEVICEDESC);
     if (device.device_name.empty()) {
       device.device_name = device.port_name;
     }
 
     std::uint16_t vendor_id = 0;
-    const std::string hardware_id = GetDeviceProperty(device_info, &device_data, SPDRP_HARDWAREID);
+    const std::string hardware_id =
+        GetDeviceProperty(device_info, &device_data, SPDRP_HARDWAREID);
     device.supported = utils::IsOk(ParseVendorId(&vendor_id, hardware_id)) &&
                        vendor_id == kStMicroelectronicsVendorId;
     device.connection_state = ConnectionState::kConnected;
@@ -112,21 +122,25 @@ utils::ErrorCode DeviceManager::Subscribe(IDeviceSubscriber* subscriber) {
   if (subscriber == nullptr) {
     return utils::ErrorCode::kInvalidArgument;
   }
-  if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) == subscribers_.end()) {
+  if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) ==
+      subscribers_.end()) {
     subscribers_.push_back(subscriber);
   }
   return utils::ErrorCode::kOk;
 }
 
 void DeviceManager::Unsubscribe(IDeviceSubscriber* subscriber) {
-  subscribers_.erase(std::remove(subscribers_.begin(), subscribers_.end(), subscriber),
-                     subscribers_.end());
+  subscribers_.erase(
+      std::remove(subscribers_.begin(), subscribers_.end(), subscriber),
+      subscribers_.end());
 }
 
-void DeviceManager::NotifySubscribers(DeviceEvent event, const DeviceState& device) {
+void DeviceManager::NotifySubscribers(DeviceEvent event,
+                                      const DeviceState& device) {
   const std::vector<IDeviceSubscriber*> snapshot = subscribers_;
   for (IDeviceSubscriber* subscriber : snapshot) {
-    if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) != subscribers_.end()) {
+    if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) !=
+        subscribers_.end()) {
       subscriber->Update(event, device);
     }
   }
@@ -145,9 +159,10 @@ utils::ErrorCode DeviceManager::ScanPorts() {
 
   for (auto& entry : devices_) {
     DeviceState& device = entry.second;
-    const bool present =
-        std::any_of(found.begin(), found.end(),
-                    [&entry](const DeviceState& other) { return other.port_name == entry.first; });
+    const bool present = std::any_of(found.begin(), found.end(),
+                                     [&entry](const DeviceState& other) {
+                                       return other.port_name == entry.first;
+                                     });
     if (!present && device.connection_state == ConnectionState::kConnected) {
       device.connection_state = ConnectionState::kDisconnected;
       device.health = DeviceHealth::kUnknown;
@@ -166,7 +181,8 @@ void DeviceManager::UpdateDevice(const DeviceState& found) {
   }
 
   DeviceState& device = existing->second;
-  if (device.device_name == found.device_name && device.supported == found.supported &&
+  if (device.device_name == found.device_name &&
+      device.supported == found.supported &&
       device.connection_state == ConnectionState::kConnected) {
     return;
   }
@@ -186,13 +202,14 @@ std::vector<DeviceState> DeviceManager::ShowDevices() const {
   return result;
 }
 
-utils::ErrorCode DeviceManager::GetDevice(DeviceRole role, DeviceState* device) const {
+utils::ErrorCode DeviceManager::GetDevice(DeviceRole role,
+                                          DeviceState* device) const {
   if (device == nullptr) {
     return utils::ErrorCode::kInvalidArgument;
   }
-  const auto match = std::find_if(devices_.begin(), devices_.end(), [role](const auto& entry) {
-    return entry.second.role == role;
-  });
+  const auto match = std::find_if(
+      devices_.begin(), devices_.end(),
+      [role](const auto& entry) { return entry.second.role == role; });
   if (match == devices_.end()) {
     return utils::ErrorCode::kRoleNotAssigned;
   }
@@ -201,13 +218,16 @@ utils::ErrorCode DeviceManager::GetDevice(DeviceRole role, DeviceState* device) 
 }
 
 ConnectionState DeviceManager::GetConnectionState() const {
-  const bool connected = std::any_of(devices_.begin(), devices_.end(), [](const auto& entry) {
-    return entry.second.connection_state == ConnectionState::kConnected;
-  });
-  return connected ? ConnectionState::kConnected : ConnectionState::kDisconnected;
+  const bool connected =
+      std::any_of(devices_.begin(), devices_.end(), [](const auto& entry) {
+        return entry.second.connection_state == ConnectionState::kConnected;
+      });
+  return connected ? ConnectionState::kConnected
+                   : ConnectionState::kDisconnected;
 }
 
-utils::ErrorCode DeviceManager::SetRole(const std::string& port_name, DeviceRole role) {
+utils::ErrorCode DeviceManager::SetRole(const std::string& port_name,
+                                        DeviceRole role) {
   const auto target = devices_.find(port_name);
   if (target == devices_.end()) {
     return utils::ErrorCode::kPortNotFound;
@@ -233,7 +253,8 @@ utils::ErrorCode DeviceManager::SetRole(const std::string& port_name, DeviceRole
   return utils::ErrorCode::kOk;
 }
 
-utils::ErrorCode DeviceManager::SetBaudRate(const std::string& port_name, BaudRate rate) {
+utils::ErrorCode DeviceManager::SetBaudRate(const std::string& port_name,
+                                            BaudRate rate) {
   const auto target = devices_.find(port_name);
   if (target == devices_.end()) {
     return utils::ErrorCode::kPortNotFound;
@@ -245,7 +266,8 @@ utils::ErrorCode DeviceManager::SetBaudRate(const std::string& port_name, BaudRa
   return utils::ErrorCode::kOk;
 }
 
-utils::ErrorCode DeviceManager::SetHealth(const std::string& port_name, DeviceHealth health) {
+utils::ErrorCode DeviceManager::SetHealth(const std::string& port_name,
+                                          DeviceHealth health) {
   const auto target = devices_.find(port_name);
   if (target == devices_.end()) {
     return utils::ErrorCode::kPortNotFound;
