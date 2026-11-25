@@ -5,7 +5,7 @@
 namespace stfuzz {
 namespace utils {
 
-enum class ErrorCode : uint16_t {
+enum class ErrorCode : uint8_t {
   kOk = 0,
 
   // General / Common (1 - 99)
@@ -42,7 +42,7 @@ enum class ErrorCode : uint16_t {
   // Adaptors: Target / DUT & Control (180 - 199)
   kResetFailed = 180,
   kTargetHalted,
-  kTargetMemoryAccessFailed
+  kTargetMemoryAccessFailed,
 };
 
 constexpr bool IsOk(ErrorCode code) noexcept { return code == ErrorCode::kOk; }
