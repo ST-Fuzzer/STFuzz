@@ -1,8 +1,5 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
-
 #include "core/adaptor/AdaptorSubscriber.hpp"
 #include "utils/ErrorCode.hpp"
 
@@ -15,10 +12,9 @@ class IAdaptor {
   virtual ~IAdaptor() = default;
 
   [[nodiscard]] virtual stfuzz::utils::ErrorCode Send(
-      const std::vector<uint8_t>& frame) const = 0;
-  [[nodiscard]] virtual stfuzz::utils::ErrorCode Rest() = 0;
+      const AdaptorMessage& message) = 0;
 
-  [[nodiscard]] virtual stfuzz::utils::ErrorCode Subscriber(
+  [[nodiscard]] virtual stfuzz::utils::ErrorCode Subscribe(
       IAdaptorSubscriber* subscriber) = 0;
   virtual void Unsubscribe(IAdaptorSubscriber* subscriber) = 0;
 };
