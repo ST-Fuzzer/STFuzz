@@ -4,7 +4,6 @@
 #include <unordered_map>
 
 #include "core/adaptor/AdaptorConfigInterface.hpp"
-#include "core/adaptor/injector/data/Entry.hpp"
 #include "core/adaptor/injector/data/stm32wb55/Common.hpp"
 #include "core/adaptor/injector/data/stm32wb55/Ieee802154.hpp"
 #include "utils/ErrorCode.hpp"
