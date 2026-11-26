@@ -357,7 +357,7 @@ utils::ErrorCode DeviceManager::OpenPort(const std::string& port_name) {
     return utils::ErrorCode::kOk;
   }
 
-  const std::string path = "\\\\.\\" + port_name;
+  const std::string path = R"(\\.\)" + port_name;
   const HANDLE handle = CreateFileA(path.c_str(), GENERIC_READ | GENERIC_WRITE,
                                     0, nullptr, OPEN_EXISTING, 0, nullptr);
   if (handle == INVALID_HANDLE_VALUE) {
@@ -395,7 +395,7 @@ utils::ErrorCode DeviceManager::SendFrame(DeviceRole role,
     return result;
   }
 
-  const HANDLE handle = static_cast<HANDLE>(port_handle);
+  const auto handle = static_cast<HANDLE>(port_handle);
   std::size_t total_written = 0;
   while (total_written < frame.size()) {
     DWORD written = 0;
@@ -421,7 +421,7 @@ utils::ErrorCode DeviceManager::ReceiveFrame(DeviceRole role,
     return result;
   }
 
-  const HANDLE handle = static_cast<HANDLE>(port_handle);
+  const auto handle = static_cast<HANDLE>(port_handle);
   frame->clear();
   std::array<char, kReadChunkSize> buffer{};
   for (;;) {
