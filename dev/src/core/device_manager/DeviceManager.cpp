@@ -23,9 +23,15 @@ namespace device_manager {
 
 namespace {
 
-constexpr uint16_t kStMicroelectronicsVendorId = 0x0483;
+constexpr std::uint16_t kStMicroelectronicsVendorId = 0x0483;
 
-utils::ErrorCode ParseVendorId(uint16_t* vendor_id,
+constexpr DWORD kReadIntervalTimeoutMs = 50;
+constexpr DWORD kReadTotalTimeoutMs = 1000;
+constexpr DWORD kWriteTimeoutMs = 1000;
+constexpr DWORD kDriverBufferSize = 4096;
+constexpr std::size_t kReadChunkSize = 1024;
+
+utils::ErrorCode ParseVendorId(std::uint16_t* vendor_id,
                                const std::string& hardware_id) {
   const std::size_t position = hardware_id.find("VID_");
   if (vendor_id == nullptr || position == std::string::npos ||
@@ -104,7 +110,7 @@ utils::ErrorCode ListSerialPorts(std::vector<DeviceState>* devices) {
       device.device_name = device.port_name;
     }
 
-    uint16_t vendor_id = 0;
+    std::uint16_t vendor_id = 0;
     const std::string hardware_id =
         GetDeviceProperty(device_info, &device_data, SPDRP_HARDWAREID);
     device.supported = utils::IsOk(ParseVendorId(&vendor_id, hardware_id)) &&
@@ -117,7 +123,97 @@ utils::ErrorCode ListSerialPorts(std::vector<DeviceState>* devices) {
   return utils::ErrorCode::kOk;
 }
 
+utils::ErrorCode ConfigurePort(HANDLE handle, BaudRate rate) {
+  DCB dcb{};
+  dcb.DCBlength = sizeof(dcb);
+  if (GetCommState(handle, &dcb) == 0) {
+    return utils::ErrorCode::kPortConfigFailed;
+  }
+  dcb.BaudRate = static_cast<DWORD>(rate);
+  dcb.ByteSize = 8;
+  dcb.Parity = NOPARITY;
+  dcb.StopBits = ONESTOPBIT;
+  dcb.fBinary = TRUE;
+  dcb.fParity = FALSE;
+  dcb.fOutxCtsFlow = FALSE;
+  dcb.fOutxDsrFlow = FALSE;
+  dcb.fDtrControl = DTR_CONTROL_ENABLE;
+  dcb.fRtsControl = RTS_CONTROL_ENABLE;
+  dcb.fOutX = FALSE;
+  dcb.fInX = FALSE;
+  if (SetCommState(handle, &dcb) == 0) {
+    return utils::ErrorCode::kPortConfigFailed;
+  }
+
+  COMMTIMEOUTS timeouts{};
+  timeouts.ReadIntervalTimeout = kReadIntervalTimeoutMs;
+  timeouts.ReadTotalTimeoutMultiplier = 0;
+  timeouts.ReadTotalTimeoutConstant = kReadTotalTimeoutMs;
+  timeouts.WriteTotalTimeoutMultiplier = 0;
+  timeouts.WriteTotalTimeoutConstant = kWriteTimeoutMs;
+  if (SetCommTimeouts(handle, &timeouts) == 0) {
+    return utils::ErrorCode::kPortConfigFailed;
+  }
+
+  SetupComm(handle, kDriverBufferSize, kDriverBufferSize);
+  PurgeComm(handle, PURGE_RXCLEAR | PURGE_TXCLEAR);
+  return utils::ErrorCode::kOk;
+}
+
 }  // namespace
+
+DeviceManager::~DeviceManager() {
+  for (const auto& entry : open_ports_) {
+    CloseHandle(static_cast<HANDLE>(entry.second));
+  }
+}
+
+utils::ErrorCode DeviceManager::Subscribe(IDeviceSubscriber* subscriber) {
+  if (subscriber == nullptr) {
+    return utils::ErrorCode::kInvalidArgument;
+  }
+  if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) ==
+      subscribers_.end()) {
+    subscribers_.push_back(subscriber);
+  }
+  return utils::ErrorCode::kOk;
+}
+
+void DeviceManager::Unsubscribe(IDeviceSubscriber* subscriber) {
+  subscribers_.erase(
+      std::remove(subscribers_.begin(), subscribers_.end(), subscriber),
+      subscribers_.end());
+}
+
+void DeviceManager::NotifySubscribers(DeviceEvent event,
+                                      const DeviceState& device) {
+  const std::vector<IDeviceSubscriber*> snapshot = subscribers_;
+  for (IDeviceSubscriber* subscriber : snapshot) {
+    if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) !=
+        subscribers_.end()) {
+      subscriber->Update(event, device);
+    }
+  }
+}
+
+utils::ErrorCode DeviceManager::FindOpenPort(DeviceRole role,
+                                             void** handle) const {
+  if (role == DeviceRole::kNone || handle == nullptr) {
+    return utils::ErrorCode::kInvalidArgument;
+  }
+  const auto device = std::find_if(
+      devices_.begin(), devices_.end(),
+      [role](const auto& entry) { return entry.second.role == role; });
+  if (device == devices_.end()) {
+    return utils::ErrorCode::kRoleNotAssigned;
+  }
+  const auto port = open_ports_.find(device->first);
+  if (port == open_ports_.end()) {
+    return utils::ErrorCode::kPortNotOpen;
+  }
+  *handle = port->second;
+  return utils::ErrorCode::kOk;
+}
 
 utils::ErrorCode DeviceManager::ScanPorts() {
   std::vector<DeviceState> found;
@@ -137,12 +233,33 @@ utils::ErrorCode DeviceManager::ScanPorts() {
                                        return other.port_name == entry.first;
                                      });
     if (!present && device.connection_state == ConnectionState::kConnected) {
+      ClosePort(entry.first);
       device.connection_state = ConnectionState::kDisconnected;
       device.health = DeviceHealth::kUnknown;
       NotifySubscribers(DeviceEvent::kDisconnected, device);
     }
   }
   return utils::ErrorCode::kOk;
+}
+
+void DeviceManager::UpdateDevice(const DeviceState& found) {
+  const auto existing = devices_.find(found.port_name);
+  if (existing == devices_.end()) {
+    devices_.emplace(found.port_name, found);
+    NotifySubscribers(DeviceEvent::kAdded, found);
+    return;
+  }
+
+  DeviceState& device = existing->second;
+  if (device.device_name == found.device_name &&
+      device.supported == found.supported &&
+      device.connection_state == ConnectionState::kConnected) {
+    return;
+  }
+  device.device_name = found.device_name;
+  device.supported = found.supported;
+  device.connection_state = ConnectionState::kConnected;
+  NotifySubscribers(DeviceEvent::kUpdated, device);
 }
 
 std::vector<DeviceState> DeviceManager::ShowDevices() const {
@@ -232,52 +349,96 @@ utils::ErrorCode DeviceManager::SetHealth(const std::string& port_name,
   return utils::ErrorCode::kOk;
 }
 
-utils::ErrorCode DeviceManager::Subscribe(IDeviceSubscriber* subscriber) {
-  if (subscriber == nullptr) {
+utils::ErrorCode DeviceManager::OpenPort(const std::string& port_name) {
+  if (devices_.find(port_name) == devices_.end()) {
+    return utils::ErrorCode::kPortNotFound;
+  }
+  if (open_ports_.find(port_name) != open_ports_.end()) {
+    return utils::ErrorCode::kOk;
+  }
+
+  const std::string path = "\\\\.\\" + port_name;
+  const HANDLE handle = CreateFileA(path.c_str(), GENERIC_READ | GENERIC_WRITE,
+                                    0, nullptr, OPEN_EXISTING, 0, nullptr);
+  if (handle == INVALID_HANDLE_VALUE) {
+    return utils::ErrorCode::kPortOpenFailed;
+  }
+
+  const utils::ErrorCode result = ConfigurePort(handle, BaudRate::kBaud921600);
+  if (!utils::IsOk(result)) {
+    CloseHandle(handle);
+    return result;
+  }
+
+  open_ports_[port_name] = handle;
+  return SetBaudRate(port_name, BaudRate::kBaud921600);
+}
+
+utils::ErrorCode DeviceManager::ClosePort(const std::string& port_name) {
+  const auto port = open_ports_.find(port_name);
+  if (port == open_ports_.end()) {
+    return utils::ErrorCode::kPortNotOpen;
+  }
+  CloseHandle(static_cast<HANDLE>(port->second));
+  open_ports_.erase(port);
+  return utils::ErrorCode::kOk;
+}
+
+utils::ErrorCode DeviceManager::SendFrame(DeviceRole role,
+                                          const std::string& frame) {
+  if (frame.empty()) {
     return utils::ErrorCode::kInvalidArgument;
   }
-  if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) ==
-      subscribers_.end()) {
-    subscribers_.push_back(subscriber);
+  void* port_handle = nullptr;
+  const utils::ErrorCode result = FindOpenPort(role, &port_handle);
+  if (!utils::IsOk(result)) {
+    return result;
+  }
+
+  const HANDLE handle = static_cast<HANDLE>(port_handle);
+  std::size_t total_written = 0;
+  while (total_written < frame.size()) {
+    DWORD written = 0;
+    const auto remaining = static_cast<DWORD>(frame.size() - total_written);
+    if (WriteFile(handle, frame.data() + total_written, remaining, &written,
+                  nullptr) == 0 ||
+        written == 0) {
+      return utils::ErrorCode::kWriteFailed;
+    }
+    total_written += written;
   }
   return utils::ErrorCode::kOk;
 }
 
-void DeviceManager::Unsubscribe(IDeviceSubscriber* subscriber) {
-  subscribers_.erase(
-      std::remove(subscribers_.begin(), subscribers_.end(), subscriber),
-      subscribers_.end());
-}
-
-void DeviceManager::UpdateDevice(const DeviceState& found) {
-  const auto existing = devices_.find(found.port_name);
-  if (existing == devices_.end()) {
-    devices_.emplace(found.port_name, found);
-    NotifySubscribers(DeviceEvent::kAdded, found);
-    return;
+utils::ErrorCode DeviceManager::ReceiveFrame(DeviceRole role,
+                                             std::string* frame) {
+  if (frame == nullptr) {
+    return utils::ErrorCode::kInvalidArgument;
+  }
+  void* port_handle = nullptr;
+  const utils::ErrorCode result = FindOpenPort(role, &port_handle);
+  if (!utils::IsOk(result)) {
+    return result;
   }
 
-  DeviceState& device = existing->second;
-  if (device.device_name == found.device_name &&
-      device.supported == found.supported &&
-      device.connection_state == ConnectionState::kConnected) {
-    return;
-  }
-  device.device_name = found.device_name;
-  device.supported = found.supported;
-  device.connection_state = ConnectionState::kConnected;
-  NotifySubscribers(DeviceEvent::kUpdated, device);
-}
-
-void DeviceManager::NotifySubscribers(DeviceEvent event,
-                                      const DeviceState& device) {
-  const std::vector<IDeviceSubscriber*> snapshot = subscribers_;
-  for (IDeviceSubscriber* subscriber : snapshot) {
-    if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) !=
-        subscribers_.end()) {
-      subscriber->UpdateDeviceEvent(event, device);
+  const HANDLE handle = static_cast<HANDLE>(port_handle);
+  frame->clear();
+  std::array<char, kReadChunkSize> buffer{};
+  for (;;) {
+    DWORD read = 0;
+    if (ReadFile(handle, buffer.data(), static_cast<DWORD>(buffer.size()),
+                 &read, nullptr) == 0) {
+      return utils::ErrorCode::kReadFailed;
+    }
+    if (read == 0) {
+      break;
+    }
+    frame->append(buffer.data(), read);
+    if (read < buffer.size()) {
+      break;
     }
   }
+  return frame->empty() ? utils::ErrorCode::kTimeout : utils::ErrorCode::kOk;
 }
 
 }  // namespace device_manager

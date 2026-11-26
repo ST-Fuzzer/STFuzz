@@ -19,10 +19,6 @@ enum class ErrorCode : uint8_t {
   kAlreadyConnected,
   kDisconnected,
   kPortNotFound,
-  kPortOpenFailed,
-  kPortConfigFailed,
-  kWriteFailed,
-  kReadFailed,
   kHandshakeFailed,
 
   // Adaptors: Config (130 - 149)
@@ -49,6 +45,12 @@ enum class ErrorCode : uint8_t {
   kDeviceNotSupported,
   kRoleNotAssigned,
   kInvalidBaudRate,
+  kPortOpenFailed,
+  kPortConfigFailed,
+  kPortNotOpen,
+  kPortAlreadyOpen,
+  kWriteFailed,
+  kReadFailed,
 };
 
 constexpr bool IsOk(ErrorCode code) noexcept { return code == ErrorCode::kOk; }
