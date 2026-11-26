@@ -1,12 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$test = "build/tests/smoke/smoke_test.exe"
-
-if (!(Test-Path $test)) {
-    throw "Smoke test executable not found: $test"
-}
-
-& $test
+ctest --test-dir build -L smoke --no-tests=error --output-on-failure --parallel $env:NUMBER_OF_PROCESSORS
 
 if ($LASTEXITCODE -ne 0) {
     throw "Smoke tests failed."
