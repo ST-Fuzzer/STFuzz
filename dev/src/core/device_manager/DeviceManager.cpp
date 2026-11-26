@@ -1,7 +1,9 @@
 #include "core/device_manager/DeviceManager.hpp"
 
-#include <setupapi.h>
+// clang-format off
 #include <windows.h>
+#include <setupapi.h>
+// clang-format on
 
 #include <algorithm>
 #include <array>
