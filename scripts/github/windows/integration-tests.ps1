@@ -1,6 +1,6 @@
 $ErrorActionPreference = "Stop"
 
-$test = "build/tests/int/int_test.exe"
+$test = "build/tests/integration/integration_test.exe"
 
 if (!(Test-Path $test)) {
     throw "Integration test executable not found: $test"
