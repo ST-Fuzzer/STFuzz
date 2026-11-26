@@ -23,9 +23,9 @@ namespace device_manager {
 
 namespace {
 
-constexpr std::uint16_t kStMicroelectronicsVendorId = 0x0483;
+constexpr uint16_t kStMicroelectronicsVendorId = 0x0483;
 
-utils::ErrorCode ParseVendorId(std::uint16_t* vendor_id,
+utils::ErrorCode ParseVendorId(uint16_t* vendor_id,
                                const std::string& hardware_id) {
   const std::size_t position = hardware_id.find("VID_");
   if (vendor_id == nullptr || position == std::string::npos ||
@@ -104,7 +104,7 @@ utils::ErrorCode ListSerialPorts(std::vector<DeviceState>* devices) {
       device.device_name = device.port_name;
     }
 
-    std::uint16_t vendor_id = 0;
+    uint16_t vendor_id = 0;
     const std::string hardware_id =
         GetDeviceProperty(device_info, &device_data, SPDRP_HARDWAREID);
     device.supported = utils::IsOk(ParseVendorId(&vendor_id, hardware_id)) &&
