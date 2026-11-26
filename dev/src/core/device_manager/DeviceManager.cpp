@@ -119,34 +119,6 @@ utils::ErrorCode ListSerialPorts(std::vector<DeviceState>* devices) {
 
 }  // namespace
 
-utils::ErrorCode DeviceManager::Subscribe(IDeviceSubscriber* subscriber) {
-  if (subscriber == nullptr) {
-    return utils::ErrorCode::kInvalidArgument;
-  }
-  if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) ==
-      subscribers_.end()) {
-    subscribers_.push_back(subscriber);
-  }
-  return utils::ErrorCode::kOk;
-}
-
-void DeviceManager::Unsubscribe(IDeviceSubscriber* subscriber) {
-  subscribers_.erase(
-      std::remove(subscribers_.begin(), subscribers_.end(), subscriber),
-      subscribers_.end());
-}
-
-void DeviceManager::NotifySubscribers(DeviceEvent event,
-                                      const DeviceState& device) {
-  const std::vector<IDeviceSubscriber*> snapshot = subscribers_;
-  for (IDeviceSubscriber* subscriber : snapshot) {
-    if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) !=
-        subscribers_.end()) {
-      subscriber->Update(event, device);
-    }
-  }
-}
-
 utils::ErrorCode DeviceManager::ScanPorts() {
   std::vector<DeviceState> found;
   const utils::ErrorCode result = ListSerialPorts(&found);
@@ -171,26 +143,6 @@ utils::ErrorCode DeviceManager::ScanPorts() {
     }
   }
   return utils::ErrorCode::kOk;
-}
-
-void DeviceManager::UpdateDevice(const DeviceState& found) {
-  const auto existing = devices_.find(found.port_name);
-  if (existing == devices_.end()) {
-    devices_.emplace(found.port_name, found);
-    NotifySubscribers(DeviceEvent::kAdded, found);
-    return;
-  }
-
-  DeviceState& device = existing->second;
-  if (device.device_name == found.device_name &&
-      device.supported == found.supported &&
-      device.connection_state == ConnectionState::kConnected) {
-    return;
-  }
-  device.device_name = found.device_name;
-  device.supported = found.supported;
-  device.connection_state = ConnectionState::kConnected;
-  NotifySubscribers(DeviceEvent::kUpdated, device);
 }
 
 std::vector<DeviceState> DeviceManager::ShowDevices() const {
@@ -278,6 +230,54 @@ utils::ErrorCode DeviceManager::SetHealth(const std::string& port_name,
     NotifySubscribers(DeviceEvent::kUpdated, target->second);
   }
   return utils::ErrorCode::kOk;
+}
+
+utils::ErrorCode DeviceManager::Subscribe(IDeviceSubscriber* subscriber) {
+  if (subscriber == nullptr) {
+    return utils::ErrorCode::kInvalidArgument;
+  }
+  if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) ==
+      subscribers_.end()) {
+    subscribers_.push_back(subscriber);
+  }
+  return utils::ErrorCode::kOk;
+}
+
+void DeviceManager::Unsubscribe(IDeviceSubscriber* subscriber) {
+  subscribers_.erase(
+      std::remove(subscribers_.begin(), subscribers_.end(), subscriber),
+      subscribers_.end());
+}
+
+void DeviceManager::UpdateDevice(const DeviceState& found) {
+  const auto existing = devices_.find(found.port_name);
+  if (existing == devices_.end()) {
+    devices_.emplace(found.port_name, found);
+    NotifySubscribers(DeviceEvent::kAdded, found);
+    return;
+  }
+
+  DeviceState& device = existing->second;
+  if (device.device_name == found.device_name &&
+      device.supported == found.supported &&
+      device.connection_state == ConnectionState::kConnected) {
+    return;
+  }
+  device.device_name = found.device_name;
+  device.supported = found.supported;
+  device.connection_state = ConnectionState::kConnected;
+  NotifySubscribers(DeviceEvent::kUpdated, device);
+}
+
+void DeviceManager::NotifySubscribers(DeviceEvent event,
+                                      const DeviceState& device) {
+  const std::vector<IDeviceSubscriber*> snapshot = subscribers_;
+  for (IDeviceSubscriber* subscriber : snapshot) {
+    if (std::find(subscribers_.begin(), subscribers_.end(), subscriber) !=
+        subscribers_.end()) {
+      subscriber->UpdateDeviceEvent(event, device);
+    }
+  }
 }
 
 }  // namespace device_manager
