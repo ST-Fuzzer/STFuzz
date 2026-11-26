@@ -73,6 +73,9 @@ jobs:
           name: build-windows
           path: build/
 
+      - name: Restore executable bits
+        run: find build -type f -name '*_test' -exec chmod +x {} +
+
       - name: Install Qt6 (MinGW)
         uses: jurplel/install-qt-action@v4
         with:
