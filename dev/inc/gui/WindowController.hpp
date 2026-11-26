@@ -19,7 +19,7 @@ class WindowController : public QObject {
 
   [[nodiscard]] stfuzz::utils::ErrorCode ShowWindow(QDialog* window);
 
-  void OpenMainWindow();
+  [[nodiscard]] stfuzz::utils::ErrorCode OpenMainWindow();
 
   QWidget* main_window() const { return main_window_; }
   QDialog* current_window() const { return current_window_; }

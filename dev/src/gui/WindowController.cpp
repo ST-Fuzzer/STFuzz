@@ -6,14 +6,15 @@
 
 #include "utils/ErrorCode.hpp"
 
-namespace stfuzz {
-namespace gui {
-namespace window_controller {
+namespace stfuzz::gui::window_controller {
 
 WindowController::WindowController(QWidget* main_window, QObject* parent)
     : QObject(parent), main_window_(main_window) {}
 
 stfuzz::utils::ErrorCode WindowController::ShowWindow(QDialog* window) {
+  if (main_window_ == nullptr) {
+    return stfuzz::utils::ErrorCode::kNotInitialized;
+  }
   if (window == nullptr) {
     return stfuzz::utils::ErrorCode::kInvalidArgument;
   }
@@ -50,7 +51,10 @@ stfuzz::utils::ErrorCode WindowController::ShowWindow(QDialog* window) {
   return stfuzz::utils::ErrorCode::kOk;
 }
 
-void WindowController::OpenMainWindow() {
+stfuzz::utils::ErrorCode WindowController::OpenMainWindow() {
+  if (main_window_ == nullptr) {
+    return stfuzz::utils::ErrorCode::kNotInitialized;
+  }
   if (current_window_ != nullptr) {
     current_window_->hide();
     current_window_->deleteLater();
@@ -59,8 +63,7 @@ void WindowController::OpenMainWindow() {
   main_window_->show();
   main_window_->raise();
   main_window_->activateWindow();
+  return stfuzz::utils::ErrorCode::kOk;
 }
 
-}  // namespace window_controller
-}  // namespace gui
-}  // namespace stfuzz
+}  // namespace stfuzz::gui::window_controller
