@@ -1,7 +1,7 @@
 #include "core/device_manager/DeviceManager.hpp"
 
-// NOLINTBEGIN(misc-include-cleaner)
 #include <windows.h>
+#include <setupapi.h>
 
 #include <algorithm>
 #include <array>
@@ -13,10 +13,9 @@
 #include <vector>
 
 #include "core/device_manager/DeviceSubscriber.hpp"
-#include "setupapi.h"
 #include "utils/ErrorCode.hpp"
 
-namespace stfuzz {  // NOLINT(modernize-concat-nested-namespaces)
+namespace stfuzz {
 namespace core {
 namespace device_manager {
 
@@ -282,5 +281,3 @@ utils::ErrorCode DeviceManager::SetHealth(const std::string& port_name,
 }  // namespace device_manager
 }  // namespace core
 }  // namespace stfuzz
-
-// NOLINTEND(misc-include-cleaner)
