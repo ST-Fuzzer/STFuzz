@@ -14,17 +14,6 @@ enum class ErrorCode : uint8_t {
   kNotInitialized,
   kTimeout,
 
-  // Adaptors: Connection & Transport (100 - 129)
-  kNotConnected = 100,
-  kAlreadyConnected,
-  kDisconnected,
-  kPortNotFound,
-  kPortOpenFailed,
-  kPortConfigFailed,
-  kWriteFailed,
-  kReadFailed,
-  kHandshakeFailed,
-
   // Adaptors: Config (130 - 149)
   kConfigFileNotFound = 130,
   kConfigParseFailed,
@@ -43,6 +32,23 @@ enum class ErrorCode : uint8_t {
   kResetFailed = 180,
   kTargetHalted,
   kTargetMemoryAccessFailed,
+
+  // Core: Device Manager (200 - 229)
+  kPortScanFailed = 200,
+  kDeviceNotSupported,
+  kRoleNotAssigned,
+  kInvalidBaudRate,
+  kPortNotFound,
+  kPortOpenFailed,
+  kPortConfigFailed,
+  kPortNotOpen,
+  kPortAlreadyOpen,
+  kNotConnected,
+  kAlreadyConnected,
+  kDisconnected,
+  kHandshakeFailed,
+  kWriteFailed,
+  kReadFailed,
 };
 
 constexpr bool IsOk(ErrorCode code) noexcept { return code == ErrorCode::kOk; }

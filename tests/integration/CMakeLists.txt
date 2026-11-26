@@ -1,0 +1,4 @@
+add_executable(integration_test integration_placeholder.cpp)
+target_link_libraries(integration_test PRIVATE stfuzz_test_main)
+target_link_libraries(integration_test PRIVATE stfuzz_core)
+gtest_discover_tests(integration_test PROPERTIES LABELS integration)

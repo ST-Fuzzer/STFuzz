@@ -1,0 +1,4 @@
+add_executable(interface_test interface_placeholder.cpp)
+target_link_libraries(interface_test PRIVATE stfuzz_test_main)
+target_link_libraries(interface_test PRIVATE stfuzz_utils stfuzz_adaptor stfuzz_core)
+gtest_discover_tests(interface_test PROPERTIES LABELS interface)
