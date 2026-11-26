@@ -19,7 +19,7 @@ class IAdaptorConfig {
       const std::string& key, const std::string& value) = 0;
   [[nodiscard]] virtual bool HasKey(const std::string& key) const = 0;
   [[nodiscard]] virtual stfuzz::utils::ErrorCode GetValue(
-      const std::string& key, std::string& value) const = 0;
+      std::string& value, const std::string& key) const = 0;
   [[nodiscard]] virtual const ConfigMap& Entries() const = 0;
 };
 
