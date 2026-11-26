@@ -1,7 +1,7 @@
 #include "core/device_manager/DeviceManager.hpp"
 
-#include <windows.h>
 #include <setupapi.h>
+#include <windows.h>
 
 #include <algorithm>
 #include <array>
