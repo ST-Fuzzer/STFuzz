@@ -395,7 +395,7 @@ utils::ErrorCode DeviceManager::SendFrame(DeviceRole role,
     return result;
   }
 
-  const auto handle = static_cast<HANDLE>(port_handle);
+  auto* const handle = static_cast<HANDLE>(port_handle);
   std::size_t total_written = 0;
   while (total_written < frame.size()) {
     DWORD written = 0;
@@ -421,7 +421,7 @@ utils::ErrorCode DeviceManager::ReceiveFrame(DeviceRole role,
     return result;
   }
 
-  const auto handle = static_cast<HANDLE>(port_handle);
+  auto* const handle = static_cast<HANDLE>(port_handle);
   frame->clear();
   std::array<char, kReadChunkSize> buffer{};
   for (;;) {
