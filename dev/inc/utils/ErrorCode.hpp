@@ -14,13 +14,6 @@ enum class ErrorCode : uint8_t {
   kNotInitialized,
   kTimeout,
 
-  // Adaptors: Connection & Transport (100 - 129)
-  kNotConnected = 100,
-  kAlreadyConnected,
-  kDisconnected,
-  kPortNotFound,
-  kHandshakeFailed,
-
   // Adaptors: Config (130 - 149)
   kConfigFileNotFound = 130,
   kConfigParseFailed,
@@ -45,10 +38,15 @@ enum class ErrorCode : uint8_t {
   kDeviceNotSupported,
   kRoleNotAssigned,
   kInvalidBaudRate,
+  kPortNotFound,
   kPortOpenFailed,
   kPortConfigFailed,
   kPortNotOpen,
   kPortAlreadyOpen,
+  kNotConnected,
+  kAlreadyConnected,
+  kDisconnected,
+  kHandshakeFailed,
   kWriteFailed,
   kReadFailed,
 };
