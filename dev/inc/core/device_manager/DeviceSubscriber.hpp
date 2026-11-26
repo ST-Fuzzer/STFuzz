@@ -20,4 +20,3 @@ class IDeviceSubscriber {
 }  // namespace device_manager
 }  // namespace core
 }  // namespace stfuzz
-
